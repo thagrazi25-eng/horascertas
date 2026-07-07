@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>HorasCertas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0f0f1a;--surface:#1a1a2e;--card:#22223b;--border:#2e2e4a;
+  --accent:#6c63ff;--accent2:#ff6584;--green:#43e97b;--yellow:#f7c948;--red:#ff6b6b;--blue:#38b2ff;
+  --text:#f0f0ff;--muted:#8888aa;--radius:16px;--radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;position:relative;overflow-x:hidden}
+/* HEADER */
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:52px 20px 20px;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
+.header h1{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.header h1 span{color:var(--accent)}
+.header-sub{font-size:12px;color:var(--muted);margin-top:2px}
+/* NAV */
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;border:none;background:transparent;color:var(--muted);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* PAGES */
+.page{display:none;padding:16px 16px 100px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;font-weight:600}
+/* SUMMARY CHIPS */
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center}
+.chip .val{font-size:22px;font-weight:700;line-height:1}
+.chip .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.chip.green .val{color:var(--green)}
+.chip.yellow .val{color:var(--yellow)}
+.chip.red .val{color:var(--red)}
+.chip.blue .val{color:var(--blue)}
+/* FORM */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;outline:none;transition:border .15s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:none;height:72px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* BTN */
+.btn{width:100%;padding:14px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:active{background:#5a52e0;transform:scale(.98)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:active{background:var(--card)}
+.btn-green{background:var(--green);color:#111}
+.btn-red{background:var(--red);color:#fff}
+.btn-sm{padding:8px 14px;font-size:13px;width:auto;border-radius:8px}
+/* LIST */
+.list-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.list-item:last-child{border-bottom:none}
+.li-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.li-body{flex:1;min-width:0}
+.li-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.li-right{text-align:right;flex-shrink:0}
+.li-val{font-size:14px;font-weight:600}
+.li-meta{font-size:11px;color:var(--muted);margin-top:2px}
+/* BADGE */
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.b-normal{background:#1a3a2a;color:var(--green)}
+.b-extra{background:#3a3010;color:var(--yellow)}
+.b-sab{background:#1a2a3a;color:var(--blue)}
+.b-dom{background:#3a1a1a;color:var(--red)}
+.b-fer{background:#2a1a3a;color:#c084fc}
+/* DELETE */
+.del-btn{width:28px;height:28px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.del-btn:active{background:var(--red);color:#fff}
+/* MONTH PICKER */
+.month-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.month-nav{width:34px;height:34px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.month-label{font-size:16px;font-weight:600}
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px;gap:4px}
+.tab{flex:1;padding:8px;border:none;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.tab.active{background:var(--accent);color:#fff}
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty p{font-size:14px}
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 20px;font-size:13px;z-index:999;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
+/* CONFIG */
+.cfg-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.cfg-row:last-child{border:none}
+.cfg-label{font-size:14px}
+.cfg-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.cfg-input{width:90px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;text-align:right}
+/* EXPORT */
+.export-card{background:linear-gradient(135deg,#6c63ff22,#ff658422);border:1px solid #6c63ff44;border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.section-hdr{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:20px 0 10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Horas<span>Certas</span></h1>
+  <div class="header-sub" id="header-date">Carregando...</div>
+</div>
+
+<!-- PAGE: HOME -->
+<div class="page active" id="page-home">
+  <div class="month-row">
+    <button class="month-nav" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="month-label">—</span>
+    <button class="month-nav" onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="chips">
+    <div class="chip green"><div class="val" id="h-total">0h</div><div class="lbl">Total horas</div></div>
+    <div class="chip yellow"><div class="val" id="h-extra">0h</div><div class="lbl">Horas extras</div></div>
+    <div class="chip blue"><div class="val" id="h-valor">R$0</div><div class="lbl">A receber</div></div>
+    <div class="chip red"><div class="val" id="h-desp">R$0</div><div class="lbl">Despesas</div></div>
+  </div>
+  <div class="export-card">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:14px;font-weight:600">Exportar mês</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Gera planilha Excel completa</div></div>
+      <button class="btn btn-primary btn-sm" onclick="exportExcel()">📊 Excel</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Registros do mês</div>
+    <div id="home-list"><div class="empty"><div class="empty-icon">📋</div><p>Nenhum registro ainda.<br>Adicione horas na aba +</p></div></div>
+  </div>
+</div>
+
+<!-- PAGE: ADD HORA -->
+<div class="page" id="page-add">
+  <div class="tabs">
+    <button class="tab active" onclick="switchAddTab('hora')">⏱ Horas</button>
+    <button class="tab" onclick="switchAddTab('desp')">💸 Despesa</button>
+  </div>
+
+  <!-- HORAS -->
+  <div id="add-hora">
+    <div class="card">
+      <div class="card-title">Novo registro de horas</div>
+      <div class="field"><label>Data</label><input type="date" id="h-data"></div>
+      <div class="row2">
+        <div class="field"><label>Entrada 1</label><input type="time" id="h-e1"></div>
+        <div class="field"><label>Saída 1</label><input type="time" id="h-s1"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Entrada 2 (opcional)</label><input type="time" id="h-e2"></div>
+        <div class="field"><label>Saída 2 (opcional)</label><input type="time" id="h-s2"></div>
+      </div>
+      <div class="field"><label>Observação (opcional)</label><textarea id="h-obs" placeholder="Ex: evento escola X..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveHora()">Salvar registro</button>
+    </div>
+  </div>
+
+  <!-- DESPESA -->
+  <div id="add-desp" style="display:none">
+    <div class="card">
+      <div class="card-title">Nova despesa</div>
+      <div class="field"><label>Data</label><input type="date" id="d-data"></div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="d-cat">
+          <option value="🚌 Transporte">🚌 Transporte</option>
+          <option value="🍽 Alimentação">🍽 Alimentação</option>
+          <option value="🏨 Hospedagem">🏨 Hospedagem</option>
+          <option value="📱 Comunicação">📱 Comunicação</option>
+          <option value="🛠 Material">🛠 Material</option>
+          <option value="💊 Saúde">💊 Saúde</option>
+          <option value="📦 Outros">📦 Outros</option>
+        </select>
+      </div>
+      <div class="field"><label>Descrição</label><input type="text" id="d-desc" placeholder="Ex: ônibus ida e volta..."></div>
+      <div class="field"><label>Valor (R$)</label><input type="number" id="d-valor" placeholder="0,00" min="0" step="0.01"></div>
+      <button class="btn btn-primary" onclick="saveDesp()">Salvar despesa</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: HISTÓRICO -->
+<div class="page" id="page-hist">
+  <div class="tabs">
+    <button class="tab active" onclick="switchHistTab('horas')">⏱ Horas</button>
+    <button class="tab" onclick="switchHistTab('despesas')">💸 Despesas</button>
+  </div>
+  <div class="month-row">
+    <button class="month-nav" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="hist-month-label">—</span>
+    <button class="month-nav" onclick="changeMonth(1)">›</button>
+  </div>
+  <div id="hist-content"></div>
+</div>
+
+<!-- PAGE: CONFIG -->
+<div class="page" id="page-cfg">
+  <div class="card">
+    <div class="card-title">Valores por hora</div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Hora normal</div><div class="cfg-sub">Até 8h por dia</div></div>
+      <input class="cfg-input" type="number" id="cfg-normal" value="0" min="0" step="0.01" onchange="saveCfg()">
+    </div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Hora extra (%)</div><div class="cfg-sub">Acima de 8h</div></div>
+      <input class="cfg-input" type="number" id="cfg-extra" value="50" min="0" onchange="saveCfg()">
+    </div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Sábado (%)</div><div class="cfg-sub">Adicional</div></div>
+      <input class="cfg-input" type="number" id="cfg-sab" value="100" min="0" onchange="saveCfg()">
+    </div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Domingo (%)</div><div class="cfg-sub">Adicional</div></div>
+      <input class="cfg-input" type="number" id="cfg-dom" value="100" min="0" onchange="saveCfg()">
+    </div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Feriado (%)</div><div class="cfg-sub">Adicional</div></div>
+      <input class="cfg-input" type="number" id="cfg-fer" value="100" min="0" onchange="saveCfg()">
+    </div>
+    <div class="cfg-row">
+      <div><div class="cfg-label">Horas diárias normais</div><div class="cfg-sub">Base para extra</div></div>
+      <input class="cfg-input" type="number" id="cfg-horas" value="8" min="1" max="24" onchange="saveCfg()">
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Feriados nacionais 2026</div>
+    <div style="font-size:13px;color:var(--muted);line-height:2">
+      01/01 · 16/02 · 17/02 · 03/04 · 05/04 · 21/04 · 01/05 · 04/06 · 07/09 · 12/10 · 02/11 · 15/11 · 20/11 · 25/12
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Dados</div>
+    <button class="btn btn-outline" style="margin-bottom:10px" onclick="exportAllExcel()">📦 Exportar tudo (Excel)</button>
+    <button class="btn btn-red" onclick="clearData()">🗑 Limpar todos os dados</button>
+  </div>
+  <div style="text-align:center;font-size:12px;color:var(--muted);padding:20px 0">HorasCertas v1.0 · Dados salvos no aparelho</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="goPage('home',this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início
+  </button>
+  <button class="nav-btn" onclick="goPage('add',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Adicionar
+  </button>
+  <button class="nav-btn" onclick="goPage('hist',this)">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Histórico
+  </button>
+  <button class="nav-btn" onclick="goPage('cfg',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FERIADOS=["2026-01-01","2026-02-16","2026-02-17","2026-04-03","2026-04-05","2026-04-21","2026-05-01","2026-06-04","2026-09-07","2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"];
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+let currentMonth=new Date().getMonth();
+let currentYear=new Date().getFullYear();
+
+function getDB(){try{return JSON.parse(localStorage.getItem('horasDB')||'{}')}catch(e){return{}}}
+function saveDB(db){localStorage.setItem('horasDB',JSON.stringify(db))}
+function getCfg(){try{return JSON.parse(localStorage.getItem('horasCfg')||'{}')}catch(e){return{}}}
+function saveCfg(){
+  const cfg={normal:+document.getElementById('cfg-normal').value||0,extra:+document.getElementById('cfg-extra').value||50,sab:+document.getElementById('cfg-sab').value||100,dom:+document.getElementById('cfg-dom').value||100,fer:+document.getElementById('cfg-fer').value||100,horas:+document.getElementById('cfg-horas').value||8};
+  localStorage.setItem('horasCfg',JSON.stringify(cfg));
+  toast('✅ Configurações salvas');renderHome();
+}
+function loadCfg(){
+  const c=getCfg();
+  if(c.normal!==undefined)document.getElementById('cfg-normal').value=c.normal;
+  if(c.extra!==undefined)document.getElementById('cfg-extra').value=c.extra;
+  if(c.sab!==undefined)document.getElementById('cfg-sab').value=c.sab;
+  if(c.dom!==undefined)document.getElementById('cfg-dom').value=c.dom;
+  if(c.fer!==undefined)document.getElementById('cfg-fer').value=c.fer;
+  if(c.horas!==undefined)document.getElementById('cfg-horas').value=c.horas;
+}
+
+function getTipo(dateStr){
+  const d=new Date(dateStr+'T12:00:00');const w=d.getDay();
+  if(FERIADOS.includes(dateStr))return'Feriado';
+  if(w===0)return'Domingo';if(w===6)return'Sábado';return'Normal';
+}
+function parseTime(t){if(!t)return null;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function minToH(m){if(m===null||m===undefined)return'—';const h=Math.floor(m/60),mn=m%60;return h+'h'+(mn>0?mn.toString().padStart(2,'0'):'');}
+function calcHoras(r){
+  let t=0;
+  if(r.e1&&r.s1){const d=parseTime(r.s1)-parseTime(r.e1);if(d>0)t+=d;}
+  if(r.e2&&r.s2){const d=parseTime(r.s2)-parseTime(r.e2);if(d>0)t+=d;}
+  return t;
+}
+function calcValor(minutos,tipo,cfg){
+  const v=cfg.normal||0,lim=(cfg.horas||8)*60;
+  if(tipo==='Normal'){const norm=Math.min(minutos,lim),extra=Math.max(minutos-lim,0);return(norm/60)*v+(extra/60)*v*(1+(cfg.extra||50)/100);}
+  if(tipo==='Sábado')return(minutos/60)*v*(1+(cfg.sab||100)/100);
+  if(tipo==='Domingo')return(minutos/60)*v*(1+(cfg.dom||100)/100);
+  if(tipo==='Feriado')return(minutos/60)*v*(1+(cfg.fer||100)/100);
+  return 0;
+}
+function fmtMoney(v){return'R$ '+v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.')}
+function fmtDate(s){const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function monthKey(y,m){return`${y}-${String(m+1).padStart(2,'0')}`;}
+
+function goPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='home')renderHome();
+  if(id==='hist')renderHist();
+}
+
+function changeMonth(d){
+  currentMonth+=d;
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  renderHome();renderHist();
+}
+
+function switchAddTab(t){
+  document.querySelectorAll('#page-add .tab').forEach((b,i)=>b.classList.toggle('active',['hora','desp'][i]===t));
+  document.getElementById('add-hora').style.display=t==='hora'?'block':'none';
+  document.getElementById('add-desp').style.display=t==='desp'?'block':'none';
+}
+function switchHistTab(t){
+  document.querySelectorAll('#page-hist .tab').forEach((b,i)=>b.classList.toggle('active',['horas','despesas'][i]===t));
+  renderHist(t);
+}
+
+function saveHora(){
+  const data=document.getElementById('h-data').value;
+  const e1=document.getElementById('h-e1').value;
+  const s1=document.getElementById('h-s1').value;
+  if(!data||!e1||!s1){toast('⚠️ Preencha data, entrada e saída');return;}
+  const db=getDB();const key=monthKey(new Date(data+'T12:00:00').getFullYear(),new Date(data+'T12:00:00').getMonth());
+  if(!db[key])db[key]={horas:[],despesas:[]};
+  db[key].horas.push({id:Date.now(),data,e1,s1,e2:document.getElementById('h-e2').value,s2:document.getElementById('h-s2').value,obs:document.getElementById('h-obs').value});
+  db[key].horas.sort((a,b)=>a.data.localeCompare(b.data));
+  saveDB(db);
+  document.getElementById('h-data').value='';document.getElementById('h-e1').value='';document.getElementById('h-s1').value='';document.getElementById('h-e2').value='';document.getElementById('h-s2').value='';document.getElementById('h-obs').value='';
+  toast('✅ Registro salvo!');
+}
+
+function saveDesp(){
+  const data=document.getElementById('d-data').value;
+  const valor=parseFloat(document.getElementById('d-valor').value);
+  const desc=document.getElementById('d-desc').value;
+  if(!data||!valor||valor<=0){toast('⚠️ Preencha data e valor');return;}
+  const db=getDB();const key=monthKey(new Date(data+'T12:00:00').getFullYear(),new Date(data+'T12:00:00').getMonth());
+  if(!db[key])db[key]={horas:[],despesas:[]};
+  db[key].despesas.push({id:Date.now(),data,cat:document.getElementById('d-cat').value,desc,valor});
+  db[key].despesas.sort((a,b)=>a.data.localeCompare(b.data));
+  saveDB(db);
+  document.getElementById('d-data').value='';document.getElementById('d-desc').value='';document.getElementById('d-valor').value='';
+  toast('✅ Despesa salva!');
+}
+
+function delItem(key,tipo,id){
+  if(!confirm('Remover este item?'))return;
+  const db=getDB();
+  if(db[key]&&db[key][tipo])db[key][tipo]=db[key][tipo].filter(x=>x.id!==id);
+  saveDB(db);renderHome();renderHist();toast('🗑 Removido');
+}
+
+function renderHome(){
+  const key=monthKey(currentYear,currentMonth);
+  document.getElementById('month-label').textContent=MESES[currentMonth]+' '+currentYear;
+  document.getElementById('hist-month-label').textContent=MESES[currentMonth]+' '+currentYear;
+  const db=getDB();const cfg=getCfg();const mes=db[key]||{horas:[],despesas:[]};
+  let totalMin=0,extraMin=0,totalValor=0,totalDesp=0;
+  const lim=(cfg.horas||8)*60;
+  mes.horas.forEach(r=>{const m=calcHoras(r);const t=getTipo(r.data);totalMin+=m;if(t==='Normal')extraMin+=Math.max(m-lim,0);totalValor+=calcValor(m,t,cfg);});
+  mes.despesas.forEach(d=>totalDesp+=d.valor);
+  document.getElementById('h-total').textContent=minToH(totalMin);
+  document.getElementById('h-extra').textContent=minToH(extraMin);
+  document.getElementById('h-valor').textContent=fmtMoney(totalValor);
+  document.getElementById('h-desp').textContent=fmtMoney(totalDesp);
+  const list=document.getElementById('home-list');
+  if(!mes.horas.length&&!mes.despesas.length){list.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nenhum registro ainda.<br>Adicione horas na aba +</p></div>';return;}
+  const tipoBadge=t=>t==='Normal'?'b-normal':t==='Sábado'?'b-sab':t==='Domingo'?'b-dom':t==='Feriado'?'b-fer':'b-extra';
+  const tipoIcon=t=>t==='Normal'?'💼':t==='Sábado'?'🌤':t==='Domingo'?'🌞':t==='Feriado'?'🎉':'⚡';
+  let html=mes.horas.map(r=>{
+    const m=calcHoras(r);const t=getTipo(r.data);const v=calcValor(m,t,cfg);
+    const d=new Date(r.data+'T12:00:00');
+    return`<div class="list-item"><div class="li-icon" style="background:#1a1a3a">${tipoIcon(t)}</div><div class="li-body"><div class="li-title">${fmtDate(r.data)} <span class="badge ${tipoBadge(t)}">${t}</span></div><div class="li-sub">${DIAS[d.getDay()]} · ${r.e1}–${r.s1}${r.e2?' / '+r.e2+'–'+r.s2:''} · ${minToH(m)}</div></div><div class="li-right"><div class="li-val" style="color:var(--green)">${fmtMoney(v)}</div><button class="del-btn" onclick="delItem('${key}','horas',${r.id})">×</button></div></div>`;
+  }).join('');
+  if(mes.despesas.length){
+    html+=`<div style="font-size:12px;color:var(--muted);padding:10px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.8px">Despesas</div>`;
+    html+=mes.despesas.map(d=>`<div class="list-item"><div class="li-icon" style="background:#3a1a1a">${d.cat.split(' ')[0]}</div><div class="li-body"><div class="li-title">${d.desc||d.cat}</div><div class="li-sub">${fmtDate(d.data)} · ${d.cat}</div></div><div class="li-right"><div class="li-val" style="color:var(--red)">-${fmtMoney(d.valor)}</div><button class="del-btn" onclick="delItem('${key}','despesas',${d.id})">×</button></div></div>`).join('');
+  }
+  list.innerHTML=html;
+}
+
+function renderHist(tab){
+  const activeTab=document.querySelector('#page-hist .tab.active').textContent.includes('Hora')?'horas':'despesas';
+  const t=tab||activeTab;
+  const key=monthKey(currentYear,currentMonth);
+  const db=getDB();const cfg=getCfg();const mes=db[key]||{horas:[],despesas:[]};
+  const cont=document.getElementById('hist-content');
+  if(t==='horas'){
+    if(!mes.horas.length){cont.innerHTML='<div class="empty"><div class="empty-icon">⏱</div><p>Nenhuma hora registrada neste mês</p></div>';return;}
+    const lim=(cfg.horas||8)*60;
+    let html=mes.horas.map(r=>{
+      const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);
+      const norm=tipo==='Normal'?Math.min(m,lim):0;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
+      const d=new Date(r.data+'T12:00:00');
+      return`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><strong>${fmtDate(r.data)}</strong> <span style="color:var(--muted);font-size:13px">${DIAS[d.getDay()]}</span></div><span class="badge ${tipo==='Normal'?'b-normal':tipo==='Sábado'?'b-sab':tipo==='Domingo'?'b-dom':'b-fer'}">${tipo}</span></div><div style="font-size:13px;color:var(--muted);margin-bottom:8px">${r.e1} → ${r.s1}${r.e2?' &nbsp;|&nbsp; '+r.e2+' → '+r.s2:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-size:13px">⏱ <strong>${minToH(m)}</strong></span>${norm?`<span style="font-size:13px">✅ Normal: ${minToH(norm)}</span>`:''}${extra?`<span style="font-size:13px;color:var(--yellow)">⚡ Extra: ${minToH(extra)}</span>`:''}</div>${cfg.normal?`<div style="margin-top:8px;text-align:right;font-size:15px;font-weight:700;color:var(--green)">${fmtMoney(v)}</div>`:''}</div>`;
+    }).join('');
+    cont.innerHTML=html;
+  } else {
+    if(!mes.despesas.length){cont.innerHTML='<div class="empty"><div class="empty-icon">💸</div><p>Nenhuma despesa registrada neste mês</p></div>';return;}
+    let total=0;
+    let html=mes.despesas.map(d=>{total+=d.valor;return`<div class="list-item"><div class="li-icon" style="background:#3a1a1a;font-size:20px">${d.cat.split(' ')[0]}</div><div class="li-body"><div class="li-title">${d.desc||d.cat}</div><div class="li-sub">${fmtDate(d.data)} · ${d.cat}</div></div><div class="li-right"><div class="li-val" style="color:var(--red)">-${fmtMoney(d.valor)}</div><button class="del-btn" onclick="delItem('${key}','despesas',${d.id});renderHist()">×</button></div></div>`;}).join('');
+    html+=`<div style="display:flex;justify-content:space-between;padding:14px 0;font-size:15px;font-weight:700;border-top:1px solid var(--border);margin-top:4px"><span>Total despesas</span><span style="color:var(--red)">${fmtMoney(total)}</span></div>`;
+    cont.innerHTML=`<div class="card">${html}</div>`;
+  }
+}
+
+function exportExcel(){
+  const key=monthKey(currentYear,currentMonth);
+  const db=getDB();const cfg=getCfg();const mes=db[key]||{horas:[],despesas:[]};
+  if(!mes.horas.length&&!mes.despesas.length){toast('⚠️ Nenhum dado neste mês');return;}
+  const wb=XLSX.utils.book_new();
+  const lim=(cfg.horas||8)*60;
+  // Sheet horas
+  const horasRows=[['Data','Dia da Semana','Tipo','Entrada 1','Saída 1','Entrada 2','Saída 2','Total Horas','Horas Normais','Horas Extras','Valor (R$)','Observação']];
+  let tMin=0,tNorm=0,tExtra=0,tValor=0;
+  mes.horas.forEach(r=>{
+    const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);
+    const d=new Date(r.data+'T12:00:00');
+    const norm=tipo==='Normal'?Math.min(m,lim):m;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
+    tMin+=m;tNorm+=norm;tExtra+=extra;tValor+=v;
+    horasRows.push([fmtDate(r.data),DIAS[d.getDay()],tipo,r.e1,r.s1,r.e2||'',r.s2||'',minToH(m),minToH(norm),minToH(extra),v.toFixed(2),r.obs||'']);
+  });
+  horasRows.push([]);horasRows.push(['TOTAIS','','','','','','',minToH(tMin),minToH(tNorm),minToH(tExtra),tValor.toFixed(2),'']);
+  const ws1=XLSX.utils.aoa_to_sheet(horasRows);ws1['!cols']=[{wch:12},{wch:14},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12},{wch:14},{wch:12},{wch:12},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Horas');
+  // Sheet despesas
+  const despRows=[['Data','Categoria','Descrição','Valor (R$)']];
+  let tDesp=0;
+  mes.despesas.forEach(d=>{tDesp+=d.valor;despRows.push([fmtDate(d.data),d.cat,d.desc||'',d.valor.toFixed(2)]);});
+  despRows.push([]);despRows.push(['TOTAL','','',tDesp.toFixed(2)]);
+  const ws2=XLSX.utils.aoa_to_sheet(despRows);ws2['!cols']=[{wch:12},{wch:20},{wch:30},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Despesas');
+  // Sheet resumo
+  const resRows=[['RESUMO — '+MESES[currentMonth]+' '+currentYear],[]];
+  resRows.push(['Horas normais',minToH(tNorm)]);
+  resRows.push(['Horas extras',minToH(tExtra)]);
+  resRows.push(['Total horas',minToH(tMin)]);
+  resRows.push(['Valor horas','R$ '+tValor.toFixed(2)]);
+  resRows.push(['Total despesas','R$ '+mes.despesas.reduce((a,d)=>a+d.valor,0).toFixed(2)]);
+  resRows.push(['Saldo líquido','R$ '+(tValor-mes.despesas.reduce((a,d)=>a+d.valor,0)).toFixed(2)]);
+  const ws3=XLSX.utils.aoa_to_sheet(resRows);ws3['!cols']=[{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws3,'Resumo');
+  XLSX.writeFile(wb,`HorasCertas_${MESES[currentMonth]}_${currentYear}.xlsx`);
+  toast('📊 Excel exportado!');
+}
+
+function exportAllExcel(){
+  const db=getDB();const cfg=getCfg();const keys=Object.keys(db).sort();
+  if(!keys.length){toast('⚠️ Nenhum dado salvo');return;}
+  const wb=XLSX.utils.book_new();
+  const lim=(cfg.horas||8)*60;
+  keys.forEach(key=>{
+    const mes=db[key];const[y,m]=key.split('-');const nomeMes=MESES[parseInt(m)-1]+' '+y;
+    const rows=[['Data','Dia','Tipo','Entrada 1','Saída 1','Entrada 2','Saída 2','Total','Normal','Extra','Valor','Obs']];
+    mes.horas&&mes.horas.forEach(r=>{
+      const min=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(min,tipo,cfg);
+      const d=new Date(r.data+'T12:00:00');
+      rows.push([fmtDate(r.data),DIAS[d.getDay()],tipo,r.e1,r.s1,r.e2||'',r.s2||'',minToH(min),minToH(tipo==='Normal'?Math.min(min,lim):min),minToH(tipo==='Normal'?Math.max(min-lim,0):0),v.toFixed(2),r.obs||'']);
+    });
+    if(mes.despesas&&mes.despesas.length){rows.push([]);rows.push(['--- DESPESAS ---']);rows.push(['Data','Categoria','Descrição','Valor']);mes.despesas.forEach(d=>rows.push([fmtDate(d.data),d.cat,d.desc||'',d.valor.toFixed(2)]));}
+    const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:10},{wch:10},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:10},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,ws,nomeMes.substring(0,31));
+  });
+  XLSX.writeFile(wb,'HorasCertas_Completo.xlsx');toast('📦 Exportado com sucesso!');
+}
+
+function clearData(){if(!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.'))return;localStorage.removeItem('horasDB');toast('🗑 Dados apagados');renderHome();}
+
+function toast(msg,dur=2200){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+
+// INIT
+document.addEventListener('DOMContentLoaded',()=>{
+  const now=new Date();
+  document.getElementById('header-date').textContent=now.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('h-data').value=now.toISOString().split('T')[0];
+  document.getElementById('d-data').value=now.toISOString().split('T')[0];
+  loadCfg();renderHome();
+});
+</script>
+</body>
+</html>
