@@ -895,8 +895,57 @@ function clearData(){
 }
 function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
 
+// ===== MIGRAÇÃO: recupera dados de versões antigas do app (chave 'horasDB') =====
+const OLD_CAT_MAP={
+  '🚌 Transporte':'Transporte','🍽 Alimentação':'Alimentação','📱 Comunicação':'Serviços',
+  '🛠 Material':'Outros','👔 Uniforme':'Outros','🏠 Casa / Moradia':'Moradia','💊 Saúde':'Saúde',
+  '🎓 Educação':'Outros','🎉 Lazer':'Lazer','👗 Vestuário':'Outros','👶 Filhos':'Outros',
+  '🐾 Pet':'Outros','🍔 Mercado':'Alimentação','💰 Poupança':'Investimento','📈 Investimento':'Investimento',
+  '💳 Dívida / Parcela':'Cartão','📦 Outros':'Outros'
+};
+function migrateOldData(){
+  if(localStorage.getItem('hc_migrated_v3'))return;
+  try{
+    const oldDB=S_get('horasDB',null);
+    if(oldDB){
+      let horas=getHoras();let extras=getExtras();
+      const existingHorasIds=new Set(horas.map(h=>h.id));
+      const existingExtrasIds=new Set(extras.map(e=>e.id));
+      let importedH=0,importedD=0;
+      Object.keys(oldDB).forEach(key=>{
+        const mesData=oldDB[key];
+        (mesData.horas||[]).forEach(r=>{
+          if(!existingHorasIds.has(r.id)){
+            horas.push({id:r.id,data:r.data,e1:r.e1||'',s1:r.s1||'',e2:r.e2||'',s2:r.s2||'',e3:'',s3:'',obs:r.obs||''});
+            importedH++;
+          }
+        });
+        (mesData.despesas||[]).forEach(d=>{
+          if(!existingExtrasIds.has(d.id)){
+            const[y,m]=key.split('-');
+            const categoria=OLD_CAT_MAP[d.cat]||'Outros';
+            extras.push({id:d.id,mes:parseInt(m),ano:parseInt(y),descricao:d.desc||d.cat||'Despesa',valor:d.valor,categoria,parcela:'',pago:!!d.pago});
+            importedD++;
+          }
+        });
+      });
+      if(importedH>0||importedD>0){
+        horas.sort((a,b)=>a.data.localeCompare(b.data));
+        saveHorasArr(horas);saveExtrasArr(extras);
+        setTimeout(()=>toast(`✅ ${importedH} hora(s) e ${importedD} despesa(s) recuperadas!`,4000),500);
+      }
+    }
+    const oldCfg=S_get('horasCfg',null);
+    if(oldCfg&&!localStorage.getItem('hc_cfg')){
+      S_set('hc_cfg',{normal:oldCfg.normal||0,extra:oldCfg.extra||50,sab:oldCfg.sab||100,dom:oldCfg.dom||100,fer:oldCfg.fer||100,horas:oldCfg.horas||8});
+    }
+  }catch(err){console.log('Migração falhou:',err);}
+  localStorage.setItem('hc_migrated_v3','true');
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded',()=>{
+  migrateOldData();
   setupResponsive();
   window.addEventListener('resize',()=>{setupResponsive();renderHome();});
   const now=new Date();
