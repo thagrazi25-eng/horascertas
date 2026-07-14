@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="HorasCertas">
 <meta name="theme-color" content="#0f0f1a">
 <title>HorasCertas</title>
-<script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
 <style>
 :root{
   --bg:#0f0f1a;--surface:#1a1a2e;--card:#22223b;--border:#2e2e4a;
@@ -895,4 +895,375 @@ function renderHome(){
     return`<div class="list-item"><div class="li-icon" style="background:#1a1a3a">${tipoIcon(t)}</div><div class="li-body"><div class="li-title">${fmtDate(r.data)} <span class="badge ${tipoBadge(t)}">${t}</span>${inc?'<span class="badge b-pend" style="margin-left:4px">Em aberto</span>':''}</div><div class="li-sub">${DIAS[d.getDay()]} · ${r.e1||'—'}${r.s1?'–'+r.s1:''}${r.e2?' / '+r.e2+(r.s2?'–'+r.s2:''):''}${r.e3?' / '+r.e3+(r.s3?'–'+r.s3:''):''} · ${minToH(m)}</div></div><div class="li-right"><div class="li-val" style="color:var(--green)">${cfg.normal?fmtMoney(v):minToH(m)}</div><div class="li-actions"><button class="icon-btn" onclick="editHora('${r.id}')">✏️</button><button class="icon-btn" onclick="delHora('${r.id}')">🗑</button></div></div></div>`;
   }).join('');
 
-  if(fixasMes.length||extra
+  if(fixasMes.length||extrasMes.length){
+    html+=`<div style="font-size:12px;color:var(--muted);padding:10px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.8px">Despesas</div>`;
+    html+=fixasMes.map(f=>`<div class="list-item${f.pago?' desp-pago':''}"><div class="li-icon" style="background:#1a2a3a">${CAT_EMOJI[f.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${f.nome} <span class="badge b-fixa">Fixa</span></div><div class="li-sub">${f.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${f.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(f.valor)}</div><div class="li-actions"><button class="icon-btn" onclick="toggleFixaPago('${f.id}','${key}')">${f.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editFixa('${f.id}')">✏️</button></div></div></div>`).join('');
+    html+=extrasMes.map(e=>`<div class="list-item${e.pago?' desp-pago':''}"><div class="li-icon" style="background:#3a1a1a">${CAT_EMOJI[e.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${e.descricao}${e.parcela?' <span class="badge b-extra">'+e.parcela+'</span>':''}</div><div class="li-sub">${e.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${e.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(e.valor)}</div><div class="li-actions"><button class="icon-btn" onclick="toggleExtraPago('${e.id}')">${e.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editDesp('${e.id}')">✏️</button><button class="icon-btn" onclick="delDesp('${e.id}')">🗑</button></div></div></div>`).join('');
+  }
+  list.innerHTML=html;
+}
+
+function renderChart(horasMes,cfg,lim){
+  const semanas={};
+  horasMes.forEach(r=>{const d=new Date(r.data+'T12:00:00');const wk=getWeekNum(d);if(!semanas[wk])semanas[wk]=0;semanas[wk]+=calcHoras(r);});
+  const keys=Object.keys(semanas).sort();
+  if(!keys.length){document.getElementById('chart-bars').innerHTML='<div style="width:100%;text-align:center;color:var(--muted);font-size:13px;padding:30px 0">Sem dados</div>';document.getElementById('chart-labels').innerHTML='';return;}
+  const maxMin=Math.max(...keys.map(k=>semanas[k]),1);
+  document.getElementById('chart-bars').innerHTML=keys.map(k=>{
+    const pct=(semanas[k]/maxMin)*100;const color=semanas[k]>(lim*5)?'var(--yellow)':'var(--accent)';
+    return`<div class="bar-col"><div class="bar" style="height:${pct}%;background:${color};width:100%;position:relative"><span class="bar-val">${minToH(semanas[k])}</span></div></div>`;
+  }).join('');
+  document.getElementById('chart-labels').innerHTML=keys.map(k=>`<span style="font-size:10px;color:var(--muted);flex:1;text-align:center">Sem ${k}</span>`).join('');
+}
+
+// ===== RESUMO ANUAL =====
+function changeResumoYear(d){resumoYear+=d;renderResumo();}
+function getTotaisMes(mes,ano){
+  const cfg=getCfg();const lim=(cfg.horas||8)*60;
+  const key=monthKey(ano,mes-1);
+  const horasMes=getHoras().filter(r=>r.data.startsWith(key));
+  let valor=0,totalMin=0;
+  horasMes.forEach(r=>{const m=calcHoras(r);const t=getTipo(r.data);totalMin+=m;valor+=calcValor(m,t,cfg);});
+  const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
+  const fixasMes=getFixasDoMes(key);
+  let despPago=0,despPend=0;
+  extrasMes.forEach(e=>{if(e.pago)despPago+=e.valor;else despPend+=e.valor;});
+  fixasMes.forEach(f=>{if(f.pago)despPago+=f.valor;else despPend+=f.valor;});
+  let bonif=0;
+  getRecebs().forEach(r=>r.parcelas.forEach(p=>{if(p.status==='recebido'&&p.dataRecebimento&&p.dataRecebimento.startsWith(key))bonif+=p.valor;}));
+  const temDados=horasMes.length>0||extrasMes.length>0||fixasMes.length>0||bonif>0;
+  return {valor,totalMin,despPago,despPend,despTotal:despPago+despPend,bonif,saldo:valor+bonif-despPago,temDados};
+}
+function goToMes(mes,ano){
+  currentMonth=mes-1;currentYear=ano;
+  goPage('home',document.getElementById('snav-home')||document.querySelector('.nav-btn'));
+}
+function renderResumo(){
+  document.getElementById('resumo-year-label').textContent=resumoYear;
+  const meses=MESES.map((nome,i)=>({nome,i,t:getTotaisMes(i+1,resumoYear)}));
+  const maxVal=Math.max(...meses.map(m=>Math.max(m.t.valor,m.t.despPago)),1);
+
+  document.getElementById('resumo-chart-bars').innerHTML=meses.map(m=>{
+    const pctRec=(m.t.valor/maxVal)*100,pctDesp=(m.t.despPago/maxVal)*100;
+    return`<div class="bar-col" style="flex-direction:row;gap:2px;align-items:flex-end;height:100%">
+      <div class="bar" style="height:${pctRec}%;background:var(--green);width:45%;position:relative;min-height:${m.t.valor>0?'2px':'0'}"></div>
+      <div class="bar" style="height:${pctDesp}%;background:var(--red);width:45%;position:relative;min-height:${m.t.despPago>0?'2px':'0'}"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('resumo-chart-labels').innerHTML=meses.map(m=>`<span style="font-size:9px;color:var(--muted);flex:1;text-align:center">${m.nome.substring(0,3)}</span>`).join('');
+
+  document.getElementById('resumo-list').innerHTML=meses.map(({nome,i,t})=>{
+    const mes=i+1;
+    const pct=t.despTotal>0?Math.min(100,Math.round((t.valor/t.despTotal)*100)):(t.valor>0?100:0);
+    const corBarra=pct>=100?'var(--green)':pct>=80?'var(--yellow)':'var(--red)';
+    return`<div class="card" style="margin-bottom:8px;opacity:${t.temDados?1:.6};cursor:pointer" onclick="goToMes(${mes},${resumoYear})">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong style="font-size:15px">${nome}</strong>
+        <span style="font-size:12px;color:var(--muted)">${minToH(t.totalMin)}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:13px;margin-bottom:8px">
+        <span>💵 <strong style="color:var(--green)">${fmtMoney(t.valor)}</strong></span>
+        ${t.bonif>0?`<span>🎁 <strong style="color:var(--green)">${fmtMoney(t.bonif)}</strong></span>`:''}
+        <span>💸 <strong style="color:var(--red)">${fmtMoney(t.despPago)}</strong>${t.despPend>0?' <span style="color:var(--yellow);font-size:11px">(+'+fmtMoney(t.despPend)+' pend.)</span>':''}</span>
+      </div>
+      <div style="background:var(--surface);border-radius:6px;height:6px;overflow:hidden;margin-bottom:6px">
+        <div style="width:${pct}%;height:100%;background:${corBarra}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>Cobertura: ${pct}%</span>
+        <span>Saldo: <strong style="color:${t.saldo>=0?'var(--green)':'var(--red)'}">${fmtMoney(t.saldo)}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== RENDER HIST =====
+function renderHist(){
+  const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
+  const cfg=getCfg();const lim=(cfg.horas||8)*60;
+  const cont=document.getElementById('hist-content');
+  if(activeHistTab==='horas'){
+    const horasMes=getHoras().filter(r=>r.data.startsWith(key));
+    if(!horasMes.length){cont.innerHTML='<div class="empty"><div class="empty-icon">⏱</div><p>Nenhuma hora registrada</p></div>';return;}
+    cont.innerHTML=horasMes.map(r=>{
+      const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);
+      const norm=tipo==='Normal'?Math.min(m,lim):m;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
+      const d=new Date(r.data+'T12:00:00');const inc=r.e1&&!r.s1;
+      const tb=tipo==='Normal'?'b-normal':tipo==='Sábado'?'b-sab':tipo==='Domingo'?'b-dom':'b-fer';
+      return`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><strong>${fmtDate(r.data)}</strong> <span style="color:var(--muted);font-size:13px">${DIAS_FULL[d.getDay()]}</span><br><span class="badge ${tb}" style="margin-top:4px">${tipo}</span>${inc?'<span class="badge b-pend" style="margin-left:4px">Em aberto ⚠️</span>':''}</div><div style="display:flex;gap:4px"><button class="icon-btn" onclick="editHora('${r.id}')">✏️</button><button class="icon-btn" onclick="delHora('${r.id}');renderHist()">🗑</button></div></div><div style="font-size:13px;color:var(--muted);margin-bottom:8px">${r.e1||'—'}${r.s1?' → '+r.s1:' → Em aberto'}${r.e2?' | '+r.e2+(r.s2?' → '+r.s2:''):''}${r.e3?' | '+r.e3+(r.s3?' → '+r.s3:''):''}</div><div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px"><span>⏱ <strong>${minToH(m)}</strong></span>${norm&&tipo==='Normal'?`<span style="color:var(--green)">✅ ${minToH(norm)}</span>`:''} ${extra?`<span style="color:var(--yellow)">⚡ Extra: ${minToH(extra)}</span>`:''} ${tipo!=='Normal'&&m?`<span style="color:var(--blue)">🌟 Especial: ${minToH(m)}</span>`:''}</div>${cfg.normal&&m?`<div style="margin-top:10px;text-align:right;font-size:16px;font-weight:700;color:var(--green)">${fmtMoney(v)}</div>`:''} ${r.obs?`<div style="margin-top:8px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">📝 ${r.obs}</div>`:''}</div>`;
+    }).join('');
+  } else {
+    const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
+    const fixasMes=getFixasDoMes(key);
+    if(!extrasMes.length&&!fixasMes.length){cont.innerHTML='<div class="empty"><div class="empty-icon">💸</div><p>Nenhuma despesa neste mês</p></div>';return;}
+    let tPago=0,tPend=0;
+    let html=fixasMes.map(f=>{
+      if(f.pago)tPago+=f.valor;else tPend+=f.valor;
+      return`<div class="list-item${f.pago?' desp-pago':''}"><div class="li-icon" style="background:#1a2a3a;font-size:20px">${CAT_EMOJI[f.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${f.nome} <span class="badge b-fixa">Fixa</span></div><div class="li-sub">${f.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${f.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(f.valor)}</div><span class="badge ${f.pago?'b-pago':'b-pend'}">${f.pago?'Pago':'Pendente'}</span><div class="li-actions" style="margin-top:4px"><button class="icon-btn" onclick="toggleFixaPago('${f.id}','${key}');renderHist()">${f.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editFixa('${f.id}')">✏️</button></div></div></div>`;
+    }).join('');
+    html+=extrasMes.map(e=>{
+      if(e.pago)tPago+=e.valor;else tPend+=e.valor;
+      return`<div class="list-item${e.pago?' desp-pago':''}"><div class="li-icon" style="background:#3a1a1a;font-size:20px">${CAT_EMOJI[e.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${e.descricao}${e.parcela?' <span class="badge b-extra">'+e.parcela+'</span>':''}</div><div class="li-sub">${e.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${e.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(e.valor)}</div><span class="badge ${e.pago?'b-pago':'b-pend'}">${e.pago?'Pago':'Pendente'}</span><div class="li-actions" style="margin-top:4px"><button class="icon-btn" onclick="toggleExtraPago('${e.id}');renderHist()">${e.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editDesp('${e.id}')">✏️</button><button class="icon-btn" onclick="delDesp('${e.id}');renderHist()">🗑</button></div></div></div>`;
+    }).join('');
+    cont.innerHTML=`<div class="card">${html}</div><div class="card"><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px"><span style="color:var(--muted)">Total pago</span><span style="color:var(--red);font-weight:600">-${fmtMoney(tPago)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px"><span style="color:var(--muted)">Pendente</span><span style="color:var(--yellow);font-weight:600">-${fmtMoney(tPend)}</span></div><div style="display:flex;justify-content:space-between;padding:10px 0 4px;font-size:15px;font-weight:700;border-top:1px solid var(--border);margin-top:6px"><span>Total geral</span><span>-${fmtMoney(tPago+tPend)}</span></div></div>`;
+  }
+}
+
+// ===== EXPORT: estilos compartilhados =====
+const XLS_STYLE_HEADER={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'6C63FF'}},alignment:{horizontal:'center',vertical:'center'}};
+const XLS_STYLE_TITLE={font:{bold:true,sz:13}};
+const XLS_FILL_SAB_FER={fill:{fgColor:{rgb:'FFF3B0'}}};   // amarelo: sábado/feriado
+const XLS_FILL_DOM={fill:{fgColor:{rgb:'FFC9C9'}}};       // vermelho: domingo
+const XLS_FILL_PAGO={fill:{fgColor:{rgb:'C9F7D6'}}};      // verde: pago/recebido
+const XLS_FILL_PEND={fill:{fgColor:{rgb:'FFE9B0'}}};      // laranja claro: pendente
+function xlsRow(cells){return cells.map(v=>typeof v==='object'&&v!==null&&'v' in v?v:{v});}
+function xlsCell(v,style){return style?{v,s:style}:{v};}
+function xlsSheetFromRows(rows){const ws={};let maxC=0,maxR=0;
+  rows.forEach((row,r)=>{row.forEach((cell,c)=>{if(cell===undefined||cell===null||cell.v===undefined||cell.v==='')return;const addr=XLSX.utils.encode_cell({r,c});ws[addr]={t:typeof cell.v==='number'?'n':'s',v:cell.v};if(cell.s)ws[addr].s=cell.s;if(c>maxC)maxC=c;if(r>maxR)maxR=r;});});
+  ws['!ref']=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:maxR,c:maxC}});return ws;
+}
+
+// ===== EXPORT: HORAS (separado, colunas reorganizadas + linhas coloridas) =====
+function exportHorasExcel(){
+  const key=monthKey(currentYear,currentMonth);
+  const horasMes=getHoras().filter(r=>r.data.startsWith(key));
+  if(!horasMes.length){toast('⚠️ Nenhuma hora neste mês');return;}
+  const cfg=getCfg();const lim=(cfg.horas||8)*60;const nome=getNome();
+  const rows=[];
+  rows.push([xlsCell(nome?'Funcionário: '+nome:'HorasCertas',XLS_STYLE_TITLE)]);
+  rows.push([]);
+  rows.push(['Data','Dia','Tipo','Entrada 1','Saída 1','Entrada 2','Saída 2','Entrada 3','Saída 3','Total','Horas Normais','Horas Extras','Valor (R$)','Observações'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+  let tMin=0,tNorm=0,tExtra=0,tValor=0;
+  horasMes.forEach(r=>{
+    const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);const d=new Date(r.data+'T12:00:00');
+    const norm=tipo==='Normal'?Math.min(m,lim):m;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
+    tMin+=m;tNorm+=norm;tExtra+=extra;tValor+=v;
+    const fill=tipo==='Domingo'?XLS_FILL_DOM:(tipo==='Sábado'||tipo==='Feriado')?XLS_FILL_SAB_FER:null;
+    rows.push([fmtDate(r.data),DIAS_FULL[d.getDay()],tipo,r.e1||'',r.s1||'Em aberto',r.e2||'',r.s2||'',r.e3||'',r.s3||'',minToH(m),minToH(norm),minToH(extra),v?v.toFixed(2):'',r.obs||''].map(val=>xlsCell(val,fill)));
+  });
+  rows.push([]);
+  rows.push(['TOTAIS','','','','','','','','',minToH(tMin),minToH(tNorm),minToH(tExtra),tValor.toFixed(2),''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
+  ws['!cols']=[{wch:12},{wch:12},{wch:9},{wch:9},{wch:11},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:12},{wch:12},{wch:11},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,ws,'Horas');
+  XLSX.writeFile(wb,`Horas_${MESES[currentMonth]}_${currentYear}${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('⏱ Excel de horas exportado!');
+}
+
+// ===== EXPORT: DESPESAS (separado, colunas reorganizadas + linhas coloridas por status) =====
+function exportDespesasExcel(){
+  const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
+  const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
+  const fixasMes=getFixasDoMes(key);
+  if(!extrasMes.length&&!fixasMes.length){toast('⚠️ Nenhuma despesa neste mês');return;}
+  const nome=getNome();
+  const rows=[];
+  rows.push([xlsCell(nome?'Funcionário: '+nome:'HorasCertas',XLS_STYLE_TITLE)]);
+  rows.push([]);
+  rows.push(['Descrição','Categoria','Tipo','Parcela','Valor (R$)','Status'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+  let tPago=0,tPend=0;
+  fixasMes.forEach(f=>{
+    if(f.pago)tPago+=f.valor;else tPend+=f.valor;
+    rows.push([f.nome,f.categoria,'Fixa','',f.valor.toFixed(2),f.pago?'Pago':'Pendente'].map(v=>xlsCell(v,f.pago?XLS_FILL_PAGO:XLS_FILL_PEND)));
+  });
+  extrasMes.forEach(e=>{
+    if(e.pago)tPago+=e.valor;else tPend+=e.valor;
+    rows.push([e.descricao,e.categoria,'Avulsa',e.parcela||'',e.valor.toFixed(2),e.pago?'Pago':'Pendente'].map(v=>xlsCell(v,e.pago?XLS_FILL_PAGO:XLS_FILL_PEND)));
+  });
+  rows.push([]);
+  rows.push(['TOTAL PAGO','','','',tPago.toFixed(2),''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  rows.push(['TOTAL PENDENTE','','','',tPend.toFixed(2),''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
+  ws['!cols']=[{wch:26},{wch:16},{wch:9},{wch:10},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Despesas');
+  XLSX.writeFile(wb,`Despesas_${MESES[currentMonth]}_${currentYear}${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('💸 Excel de despesas exportado!');
+}
+
+// ===== EXPORT: RECEBIMENTOS / BONIFICAÇÕES =====
+function exportRecebimentosExcel(){
+  const recs=getRecebs();
+  if(!recs.length){toast('⚠️ Nenhum recebimento cadastrado');return;}
+  const nome=getNome();
+  const rows=[];
+  rows.push([xlsCell(nome?'Funcionário: '+nome:'HorasCertas',XLS_STYLE_TITLE)]);
+  rows.push([]);
+  rows.push(['Cliente','Descrição','Parcela','Valor (R$)','Vencimento','Status','Data Recebimento'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+  let tRec=0,tAguard=0;
+  recs.forEach(r=>r.parcelas.forEach(p=>{
+    if(p.status==='recebido')tRec+=p.valor;else tAguard+=p.valor;
+    rows.push([r.cliente,r.descricao||'',`${p.numero}/${r.parcelas.length}`,p.valor.toFixed(2),fmtDate(p.vencimento),p.status==='recebido'?'Recebido':'Aguardando',p.dataRecebimento?fmtDate(p.dataRecebimento):''].map(v=>xlsCell(v,p.status==='recebido'?XLS_FILL_PAGO:XLS_FILL_PEND)));
+  }));
+  rows.push([]);
+  rows.push(['TOTAL RECEBIDO','','','',tRec.toFixed(2),'',''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  rows.push(['TOTAL AGUARDANDO','','','',tAguard.toFixed(2),'',''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
+  ws['!cols']=[{wch:20},{wch:26},{wch:9},{wch:12},{wch:12},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Recebimentos');
+  XLSX.writeFile(wb,`Recebimentos${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('📄 Excel de recebimentos exportado!');
+}
+
+// ===== EXPORT: TUDO (backup completo) =====
+function exportAllExcel(){
+  const wb=XLSX.utils.book_new();const nome=getNome();
+  const horas=getHoras();
+  if(horas.length){
+    const rows=[['Data','E1','S1','E2','S2','E3','S3','Obs']];
+    horas.forEach(r=>rows.push([r.data,r.e1||'',r.s1||'',r.e2||'',r.s2||'',r.e3||'',r.s3||'',r.obs||'']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Horas (tudo)');
+  }
+  const extras=getExtras();
+  if(extras.length){
+    const rows=[['Mês','Ano','Descrição','Categoria','Parcela','Valor','Pago']];
+    extras.forEach(e=>rows.push([e.mes,e.ano,e.descricao,e.categoria,e.parcela||'',e.valor,e.pago?'Sim':'Não']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Despesas Avulsas');
+  }
+  const fixas=getFixas();
+  if(fixas.length){
+    const rows=[['Nome','Valor mensal','Categoria','Encerra em']];
+    fixas.forEach(f=>rows.push([f.nome,f.valor,f.categoria,f.fim||'']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Despesas Fixas');
+  }
+  const fer=getFeriados();
+  if(fer.length){
+    const rows=[['Data','Descrição']];
+    fer.forEach(f=>rows.push([f.data,f.desc]));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Feriados');
+  }
+  const recs=getRecebs();
+  if(recs.length){
+    const rows=[['Cliente','Descrição','Parcela','Valor','Vencimento','Status','Data Recebimento']];
+    recs.forEach(r=>r.parcelas.forEach(p=>rows.push([r.cliente,r.descricao||'',`${p.numero}/${r.parcelas.length}`,p.valor,p.vencimento,p.status==='recebido'?'Recebido':'Aguardando',p.dataRecebimento||''])));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Recebimentos');
+  }
+  if(!wb.SheetNames.length){toast('⚠️ Nenhum dado salvo');return;}
+  XLSX.writeFile(wb,`HorasCertas_Backup${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('📦 Backup exportado!');
+}
+
+function clearData(){
+  if(!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.'))return;
+  ['hc_reg','hc_ext','hc_fixas','hc_fixas_over','hc_fer','hc_cfg','hc_receb'].forEach(k=>localStorage.removeItem(k));
+  toast('🗑 Dados apagados');renderHome();renderFixasConfig();renderFeriadosConfig();
+}
+function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ===== DUPLICIDADES: detectar e remover seletivamente (mantendo 1 de cada) =====
+function groupKey(obj,fields){return fields.map(f=>obj[f]??'').join('|');}
+function findDuplicateGroups(arr,fields){
+  const map={};arr.forEach(item=>{const k=groupKey(item,fields);(map[k]=map[k]||[]).push(item);});
+  return Object.entries(map).filter(([,v])=>v.length>1);
+}
+const DUP_FIELDS_HORAS=['data','e1','s1','e2','s2','e3','s3'];
+const DUP_FIELDS_EXTRAS=['mes','ano','descricao','valor','categoria','parcela'];
+const DUP_FIELDS_FIXAS=['nome','valor','categoria'];
+function checkDuplicatas(){
+  const dupHoras=findDuplicateGroups(getHoras(),DUP_FIELDS_HORAS);
+  const dupExtras=findDuplicateGroups(getExtras(),DUP_FIELDS_EXTRAS);
+  const dupFixas=findDuplicateGroups(getFixas(),DUP_FIELDS_FIXAS);
+  const totalGrupos=dupHoras.length+dupExtras.length+dupFixas.length;
+  const el=document.getElementById('dup-list');
+  if(!totalGrupos){el.innerHTML='<div class="empty" style="padding:16px"><div class="empty-icon">✅</div><p>Nenhuma duplicidade encontrada</p></div>';return;}
+  const totalExtras=[...dupHoras,...dupExtras,...dupFixas].reduce((a,[,v])=>a+v.length-1,0);
+  let html=`<div class="field-hint" style="margin:6px 0 10px;color:var(--yellow)">⚠️ ${totalGrupos} grupo(s) com duplicidade — ${totalExtras} registro(s) extra(s) no total.</div>`;
+  dupHoras.forEach(([k,v])=>{
+    html+=`<div class="list-item"><div class="li-body"><div class="li-title">⏱ ${fmtDate(v[0].data)} · ${v[0].e1||'—'}</div><div class="li-sub">${v.length} registros idênticos</div></div><button class="btn btn-red btn-sm" onclick="removerDuplicados('horas','${k.replace(/'/g,"\\'")}')">Manter 1, remover ${v.length-1}</button></div>`;
+  });
+  dupExtras.forEach(([k,v])=>{
+    html+=`<div class="list-item"><div class="li-body"><div class="li-title">💸 ${v[0].descricao}</div><div class="li-sub">${MESES[v[0].mes-1]}/${v[0].ano} · ${fmtMoney(v[0].valor)} · ${v.length} registros idênticos</div></div><button class="btn btn-red btn-sm" onclick="removerDuplicados('extras','${k.replace(/'/g,"\\'")}')">Manter 1, remover ${v.length-1}</button></div>`;
+  });
+  dupFixas.forEach(([k,v])=>{
+    html+=`<div class="list-item"><div class="li-body"><div class="li-title">🔒 ${v[0].nome}</div><div class="li-sub">${fmtMoney(v[0].valor)}/mês · ${v.length} registros idênticos</div></div><button class="btn btn-red btn-sm" onclick="removerDuplicados('fixas','${k.replace(/'/g,"\\'")}')">Manter 1, remover ${v.length-1}</button></div>`;
+  });
+  if(totalGrupos>1)html+=`<button class="btn btn-red" style="margin-top:10px" onclick="removerTodosDuplicados()">🗑 Remover TODOS os duplicados de uma vez</button>`;
+  el.innerHTML=html;
+}
+function removerDuplicados(tipo,key){
+  if(!confirm('Remover os registros duplicados deste grupo, mantendo apenas 1?'))return;
+  if(tipo==='horas'){
+    let kept=false,horas=getHoras().filter(h=>{const k=groupKey(h,DUP_FIELDS_HORAS);if(k!==key)return true;if(kept)return false;kept=true;return true;});
+    saveHorasArr(horas);
+  } else if(tipo==='extras'){
+    let kept=false,extras=getExtras().filter(e=>{const k=groupKey(e,DUP_FIELDS_EXTRAS);if(k!==key)return true;if(kept)return false;kept=true;return true;});
+    saveExtrasArr(extras);
+  } else if(tipo==='fixas'){
+    let kept=false,fixas=getFixas().filter(f=>{const k=groupKey(f,DUP_FIELDS_FIXAS);if(k!==key)return true;if(kept)return false;kept=true;return true;});
+    saveFixas(fixas);
+  }
+  toast('🗑 Duplicados removidos');checkDuplicatas();renderHome();renderHist();renderFixasConfig();
+}
+function removerTodosDuplicados(){
+  if(!confirm('Remover TODOS os registros duplicados encontrados (mantendo 1 de cada)? Esta ação não pode ser desfeita.'))return;
+  function dedupe(arr,fields){const seen=new Set();return arr.filter(item=>{const k=groupKey(item,fields);if(seen.has(k))return false;seen.add(k);return true;});}
+  saveHorasArr(dedupe(getHoras(),DUP_FIELDS_HORAS));
+  saveExtrasArr(dedupe(getExtras(),DUP_FIELDS_EXTRAS));
+  saveFixas(dedupe(getFixas(),DUP_FIELDS_FIXAS));
+  toast('🗑 Todos os duplicados removidos');checkDuplicatas();renderHome();renderHist();renderFixasConfig();
+}
+
+// ===== MIGRAÇÃO: recupera dados de versões antigas do app (chave 'horasDB') =====
+const OLD_CAT_MAP={
+  '🚌 Transporte':'Transporte','🍽 Alimentação':'Alimentação','📱 Comunicação':'Serviços',
+  '🛠 Material':'Outros','👔 Uniforme':'Outros','🏠 Casa / Moradia':'Moradia','💊 Saúde':'Saúde',
+  '🎓 Educação':'Outros','🎉 Lazer':'Lazer','👗 Vestuário':'Outros','👶 Filhos':'Outros',
+  '🐾 Pet':'Outros','🍔 Mercado':'Alimentação','💰 Poupança':'Investimento','📈 Investimento':'Investimento',
+  '💳 Dívida / Parcela':'Cartão','📦 Outros':'Outros'
+};
+function migrateOldData(){
+  if(localStorage.getItem('hc_migrated_v3'))return;
+  try{
+    const oldDB=S_get('horasDB',null);
+    if(oldDB){
+      let horas=getHoras();let extras=getExtras();
+      const existingHorasIds=new Set(horas.map(h=>h.id));
+      const existingExtrasIds=new Set(extras.map(e=>e.id));
+      let importedH=0,importedD=0;
+      Object.keys(oldDB).forEach(key=>{
+        const mesData=oldDB[key];
+        (mesData.horas||[]).forEach(r=>{
+          if(!existingHorasIds.has(r.id)){
+            horas.push({id:r.id,data:r.data,e1:r.e1||'',s1:r.s1||'',e2:r.e2||'',s2:r.s2||'',e3:'',s3:'',obs:r.obs||''});
+            importedH++;
+          }
+        });
+        (mesData.despesas||[]).forEach(d=>{
+          if(!existingExtrasIds.has(d.id)){
+            const[y,m]=key.split('-');
+            const categoria=OLD_CAT_MAP[d.cat]||'Outros';
+            extras.push({id:d.id,mes:parseInt(m),ano:parseInt(y),descricao:d.desc||d.cat||'Despesa',valor:d.valor,categoria,parcela:'',pago:!!d.pago});
+            importedD++;
+          }
+        });
+      });
+      if(importedH>0||importedD>0){
+        horas.sort((a,b)=>a.data.localeCompare(b.data));
+        saveHorasArr(horas);saveExtrasArr(extras);
+        setTimeout(()=>toast(`✅ ${importedH} hora(s) e ${importedD} despesa(s) recuperadas!`,4000),500);
+      }
+    }
+    const oldCfg=S_get('horasCfg',null);
+    if(oldCfg&&!localStorage.getItem('hc_cfg')){
+      S_set('hc_cfg',{normal:oldCfg.normal||0,extra:oldCfg.extra||50,sab:oldCfg.sab||100,dom:oldCfg.dom||100,fer:oldCfg.fer||100,horas:oldCfg.horas||8});
+    }
+  }catch(err){console.log('Migração falhou:',err);}
+  localStorage.setItem('hc_migrated_v3','true');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',()=>{
+  migrateOldData();
+  setupResponsive();
+  window.addEventListener('resize',()=>{setupResponsive();renderHome();});
+  const now=new Date();
+  document.getElementById('h-data').value=now.toISOString().split('T')[0];
+  fillMesAnoSelects(document.getElementById('d-mes'),document.getElementById('d-ano'),now.getMonth()+1,now.getFullYear());
+  fillCatSelect(document.getElementById('d-cat'));
+  fillCatSelect(document.getElementById('fixa-cat'));
+  document.getElementById('nome-input').value=getNome();
+  loadCfg();updateNomeUI();renderHome();renderFixasConfig();renderFeriadosConfig();
+  document.getElementById('snav-home')?.classList.add('active');
+});
+</script>
+</body>
+</html>
