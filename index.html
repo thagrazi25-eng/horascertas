@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="HorasCertas">
 <meta name="theme-color" content="#0f0f1a">
 <title>HorasCertas</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#0f0f1a;--surface:#1a1a2e;--card:#22223b;--border:#2e2e4a;
@@ -92,6 +92,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .b-sab{background:#1a2a3a;color:var(--blue)}.b-dom{background:#3a1a1a;color:var(--red)}
 .b-fer{background:#2a1a3a;color:var(--purple)}.b-pago{background:#1a3a1a;color:#6ee7b7}.b-pend{background:#3a2a10;color:#fbbf24}
 .b-fixa{background:#1a2a3a;color:var(--blue)}
+.b-aguardando{background:#3a2a10;color:var(--yellow)}.b-parcial{background:#1a2a3a;color:var(--blue)}.b-recebido{background:#1a3a1a;color:#6ee7b7}
+.alert-card{background:linear-gradient(135deg,#3a1a1a,#3a2410);border:1px solid #ff6b6b55;border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.alert-card .card-title{color:var(--red);margin-bottom:8px}
+.li-venc{border:1px solid #ff6b6b66;background:#ff6b6b0f;border-radius:10px;padding-left:8px;padding-right:8px}
+.meta-card{background:linear-gradient(135deg,#1a1a2e,#22223b);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.parcela-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.parcela-row:last-child{border-bottom:none}
 .icon-btn{width:28px;height:28px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .icon-btn:hover{background:var(--card)}
 .tabs{display:flex;background:var(--surface);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px;gap:4px;flex-wrap:wrap}
@@ -133,6 +140,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="sidebar-btn active" onclick="goPage('home',this)" id="snav-home"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
     <button class="sidebar-btn" onclick="goPage('add',this)" id="snav-add"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Adicionar</button>
     <button class="sidebar-btn" onclick="goPage('hist',this)" id="snav-hist"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Histórico</button>
+    <button class="sidebar-btn" onclick="goPage('receb',this)" id="snav-receb"><svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Recebimentos</button>
     <button class="sidebar-btn" onclick="goPage('resumo',this)" id="snav-resumo"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Resumo</button>
     <button class="sidebar-btn" onclick="goPage('cfg',this)" id="snav-cfg"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</button>
   </div>
@@ -231,6 +239,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div id="hist-content"></div>
 </div>
 
+<!-- RECEBIMENTOS -->
+<div class="page" id="page-receb">
+  <div class="page-title">Recebimentos</div>
+  <div id="receb-alert"></div>
+  <div class="chips">
+    <div class="chip yellow"><div class="val" id="rb-aguardando">R$0</div><div class="lbl">Aguardando</div></div>
+    <div class="chip green"><div class="val" id="rb-recebido">R$0</div><div class="lbl">Recebido (mês)</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchRecebTab('todos')">Todos</button>
+    <button class="tab" onclick="switchRecebTab('aguardando')">Aguardando</button>
+    <button class="tab" onclick="switchRecebTab('parcial')">Parcial</button>
+    <button class="tab" onclick="switchRecebTab('recebido')">Recebido</button>
+  </div>
+  <button class="btn btn-primary" style="margin-bottom:12px" onclick="openModalReceb()">+ Novo recebimento / bonificação</button>
+  <div class="export-card">
+    <button class="btn btn-primary btn-sm" style="width:100%" onclick="exportRecebimentosExcel()">📄 Exportar recebimentos .xlsx</button>
+  </div>
+  <div id="receb-list"></div>
+</div>
+
 <!-- RESUMO -->
 <div class="page" id="page-resumo">
   <div class="page-title">Resumo Anual</div>
@@ -282,11 +311,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="card">
+    <div class="card-title">🔁 Duplicidades</div>
+    <div class="field-hint" style="margin-bottom:10px">Verifique se há registros repetidos (ex: de uma migração antiga) e remova só o que quiser, mantendo sempre 1 de cada.</div>
+    <button class="btn btn-outline" style="margin-bottom:10px" onclick="checkDuplicatas()">🔍 Verificar duplicados</button>
+    <div id="dup-list"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">Dados</div>
     <button class="btn btn-outline" style="margin-bottom:10px" onclick="exportAllExcel()">📦 Exportar tudo (backup Excel)</button>
     <button class="btn btn-red" onclick="clearData()">🗑 Limpar todos os dados</button>
   </div>
-  <div style="text-align:center;font-size:12px;color:var(--muted);padding:20px 0">HorasCertas v3.0 · PWA instalável e offline</div>
+  <div style="text-align:center;font-size:12px;color:var(--muted);padding:20px 0">HorasCertas v3.1 · PWA instalável e offline</div>
 </div>
 
 </div>
@@ -296,6 +332,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <button class="nav-btn active" onclick="goPage('home',this)"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
   <button class="nav-btn" onclick="goPage('add',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Adicionar</button>
   <button class="nav-btn" onclick="goPage('hist',this)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Histórico</button>
+  <button class="nav-btn" onclick="goPage('receb',this)" id="nav-receb"><svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Receb.</button>
   <button class="nav-btn" onclick="goPage('resumo',this)" id="nav-resumo"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Resumo</button>
   <button class="nav-btn" onclick="goPage('cfg',this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
 </nav>
@@ -339,6 +376,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="field"><label>Categoria</label><select id="fixa-cat"></select></div>
     <div class="field"><label>Encerrar em (opcional)</label><input type="month" id="fixa-fim"><div class="field-hint">Deixe vazio se continua indefinidamente</div></div>
     <button class="btn btn-primary" onclick="saveFixa()">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-receb" onclick="closeModalBg(event,'modal-receb')">
+  <div class="modal"><div class="modal-title"><span id="receb-modal-title">Novo recebimento</span> <button class="close-btn" onclick="closeModal('modal-receb')">×</button></div>
+    <input type="hidden" id="receb-id">
+    <div class="field"><label>Cliente / Quem comprou</label><input type="text" id="receb-cliente" placeholder="Ex: Maria Souza"></div>
+    <div class="field"><label>Descrição</label><input type="text" id="receb-desc" placeholder="Ex: Bonificação venda produto X"></div>
+    <div class="field"><label>Valor total (R$)</label><input type="number" id="receb-valor" min="0" step="0.01"></div>
+    <div class="row2">
+      <div class="field"><label>Nº de parcelas</label><input type="number" id="receb-parcelas" min="1" step="1" value="1"></div>
+      <div class="field"><label>1º vencimento</label><input type="date" id="receb-1venc"></div>
+    </div>
+    <div class="field-hint" id="receb-hint" style="margin-bottom:12px">💡 As datas das parcelas seguintes serão geradas automaticamente (mensal), a partir do 1º vencimento.</div>
+    <button class="btn btn-primary" onclick="saveReceb()">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-parcela" onclick="closeModalBg(event,'modal-parcela')">
+  <div class="modal"><div class="modal-title">Editar parcela <button class="close-btn" onclick="closeModal('modal-parcela')">×</button></div>
+    <input type="hidden" id="parc-receb-id"><input type="hidden" id="parc-num">
+    <div class="field"><label>Valor (R$)</label><input type="number" id="parc-valor" min="0" step="0.01"></div>
+    <div class="field"><label>Vencimento</label><input type="date" id="parc-venc"></div>
+    <div class="field"><label>Status</label><select id="parc-status"><option value="aguardando">Aguardando</option><option value="recebido">Recebido</option></select></div>
+    <button class="btn btn-primary" onclick="updateParcela()">Salvar alterações</button>
   </div>
 </div>
 
@@ -413,7 +475,20 @@ function getHoras(){return S_get('hc_reg',[]);}
 function saveHorasArr(v){S_set('hc_reg',v);}
 function getExtras(){return S_get('hc_ext',[]);}
 function saveExtrasArr(v){S_set('hc_ext',v);}
+function getRecebs(){return S_get('hc_receb',[]);}
+function saveRecebs(v){S_set('hc_receb',v);}
 function getNome(){return localStorage.getItem('horasNome')||'';}
+
+// ===== RECEBIMENTOS: helpers de status/valor =====
+function recebStatus(r){
+  const total=r.parcelas.length,rec=r.parcelas.filter(p=>p.status==='recebido').length;
+  if(rec===0)return'aguardando';if(rec===total)return'recebido';return'parcial';
+}
+function recebStatusLabel(s){return s==='recebido'?'Recebido':s==='parcial'?'Parcial':'Aguardando';}
+function recebValorAguardando(r){return r.parcelas.filter(p=>p.status!=='recebido').reduce((a,p)=>a+p.valor,0);}
+function recebValorRecebido(r){return r.parcelas.filter(p=>p.status==='recebido').reduce((a,p)=>a+p.valor,0);}
+function addMonthsISO(dateStr,n){const[y,m,d]=dateStr.split('-').map(Number);const dt=new Date(y,m-1+n,d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function diasAteVencimento(dataStr){const hoje=new Date();hoje.setHours(0,0,0,0);const v=new Date(dataStr+'T00:00:00');return Math.round((v-hoje)/86400000);}
 
 function fillCatSelect(sel){sel.innerHTML=CATS.map(c=>`<option value="${c}">${CAT_EMOJI[c]} ${c}</option>`).join('');}
 function fillMesAnoSelects(selMes,selAno,mes,ano){
@@ -558,9 +633,10 @@ function goPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   document.querySelectorAll('.nav-btn,.sidebar-btn').forEach(b=>b.classList.remove('active'));
-  if(btn){btn.classList.add('active');const map={home:'snav-home',add:'snav-add',hist:'snav-hist',resumo:'snav-resumo',cfg:'snav-cfg'};document.getElementById(map[id])?.classList.add('active');}
+  if(btn){btn.classList.add('active');const map={home:'snav-home',add:'snav-add',hist:'snav-hist',receb:'snav-receb',resumo:'snav-resumo',cfg:'snav-cfg'};document.getElementById(map[id])?.classList.add('active');}
   if(id==='home')renderHome();
   if(id==='hist')renderHist();
+  if(id==='receb')renderRecebimentos();
   if(id==='resumo')renderResumo();
   if(id==='cfg'){renderFixasConfig();renderFeriadosConfig();}
 }
@@ -670,6 +746,117 @@ function updateDesp(){
   saveExtrasArr(exts);closeModal('modal-edit-desp');renderHome();renderHist();toast('✅ Atualizado!');
 }
 
+// ===== RECEBIMENTOS / BONIFICAÇÕES =====
+let activeRecebTab='todos';
+function switchRecebTab(t){activeRecebTab=t;document.querySelectorAll('#page-receb .tab').forEach((b,i)=>b.classList.toggle('active',['todos','aguardando','parcial','recebido'][i]===t));renderRecebimentos();}
+function openModalReceb(){
+  document.getElementById('receb-id').value='';document.getElementById('receb-cliente').value='';
+  document.getElementById('receb-desc').value='';document.getElementById('receb-valor').value='';
+  document.getElementById('receb-parcelas').value=1;document.getElementById('receb-1venc').value=new Date().toISOString().split('T')[0];
+  document.getElementById('receb-modal-title').textContent='Novo recebimento';
+  document.getElementById('receb-parcelas').disabled=false;document.getElementById('receb-hint').style.display='block';
+  openModal('modal-receb');
+}
+function editReceb(id){
+  const r=getRecebs().find(x=>x.id===id);if(!r)return;
+  document.getElementById('receb-id').value=r.id;document.getElementById('receb-cliente').value=r.cliente;
+  document.getElementById('receb-desc').value=r.descricao;document.getElementById('receb-valor').value=r.valorTotal;
+  document.getElementById('receb-parcelas').value=r.parcelas.length;document.getElementById('receb-1venc').value=r.parcelas[0]?.vencimento||new Date().toISOString().split('T')[0];
+  document.getElementById('receb-modal-title').textContent='Editar recebimento';
+  document.getElementById('receb-parcelas').disabled=true;document.getElementById('receb-hint').style.display='none';
+  openModal('modal-receb');
+}
+function saveReceb(){
+  const id=document.getElementById('receb-id').value;
+  const cliente=document.getElementById('receb-cliente').value.trim();
+  const descricao=document.getElementById('receb-desc').value.trim();
+  const valorTotal=parseFloat(document.getElementById('receb-valor').value);
+  const numParc=Math.max(1,parseInt(document.getElementById('receb-parcelas').value)||1);
+  const venc1=document.getElementById('receb-1venc').value;
+  if(!cliente||!valorTotal||!venc1){toast('⚠️ Preencha cliente, valor e 1º vencimento');return;}
+  let recs=getRecebs();
+  if(id){
+    const idx=recs.findIndex(x=>x.id===id);if(idx===-1)return;
+    recs[idx]={...recs[idx],cliente,descricao,valorTotal};
+    toast('✅ Recebimento atualizado!');
+  } else {
+    const valorParc=+(valorTotal/numParc).toFixed(2);
+    const parcelas=[];
+    for(let i=0;i<numParc;i++){
+      parcelas.push({numero:i+1,valor:i===numParc-1?+(valorTotal-valorParc*(numParc-1)).toFixed(2):valorParc,vencimento:addMonthsISO(venc1,i),status:'aguardando'});
+    }
+    recs.push({id:uid(),cliente,descricao,valorTotal,parcelas});
+    toast(`✅ Recebimento salvo com ${numParc} parcela(s)!`);
+  }
+  saveRecebs(recs);closeModal('modal-receb');renderRecebimentos();renderHome();
+}
+function deleteReceb(id){
+  if(!confirm('Remover este recebimento e todas as parcelas?'))return;
+  saveRecebs(getRecebs().filter(x=>x.id!==id));renderRecebimentos();renderHome();toast('🗑 Removido');
+}
+function toggleParcelaStatus(recebId,num){
+  let recs=getRecebs();const r=recs.find(x=>x.id===recebId);if(!r)return;
+  const p=r.parcelas.find(x=>x.numero===num);if(!p)return;
+  if(p.status==='recebido'){p.status='aguardando';delete p.dataRecebimento;}
+  else{p.status='recebido';p.dataRecebimento=new Date().toISOString().split('T')[0];}
+  saveRecebs(recs);renderRecebimentos();renderHome();toast(p.status==='recebido'?'✅ Parcela recebida!':'↩️ Desmarcada');
+}
+function editParcela(recebId,num){
+  const r=getRecebs().find(x=>x.id===recebId);if(!r)return;const p=r.parcelas.find(x=>x.numero===num);if(!p)return;
+  document.getElementById('parc-receb-id').value=recebId;document.getElementById('parc-num').value=num;
+  document.getElementById('parc-valor').value=p.valor;document.getElementById('parc-venc').value=p.vencimento;
+  document.getElementById('parc-status').value=p.status;
+  openModal('modal-parcela');
+}
+function updateParcela(){
+  const recebId=document.getElementById('parc-receb-id').value,num=+document.getElementById('parc-num').value;
+  let recs=getRecebs();const r=recs.find(x=>x.id===recebId);if(!r)return;
+  const p=r.parcelas.find(x=>x.numero===num);if(!p)return;
+  p.valor=parseFloat(document.getElementById('parc-valor').value)||p.valor;
+  p.vencimento=document.getElementById('parc-venc').value||p.vencimento;
+  p.status=document.getElementById('parc-status').value;
+  if(p.status==='recebido'&&!p.dataRecebimento)p.dataRecebimento=new Date().toISOString().split('T')[0];
+  if(p.status!=='recebido')delete p.dataRecebimento;
+  r.valorTotal=r.parcelas.reduce((a,x)=>a+x.valor,0);
+  saveRecebs(recs);closeModal('modal-parcela');renderRecebimentos();renderHome();toast('✅ Parcela atualizada!');
+}
+function getParcelasVencendo(dias=7){
+  const out=[];
+  getRecebs().forEach(r=>r.parcelas.forEach(p=>{
+    if(p.status!=='recebido'){const d=diasAteVencimento(p.vencimento);if(d<=dias)out.push({...p,recebId:r.id,cliente:r.cliente,atrasada:d<0});}
+  }));
+  return out.sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+}
+function renderRecebimentos(){
+  const all=getRecebs();
+  const mesKey=monthKey(currentYear,currentMonth);
+  let totalAguardando=0,totalRecebidoMes=0;
+  all.forEach(r=>{
+    totalAguardando+=recebValorAguardando(r);
+    r.parcelas.forEach(p=>{if(p.status==='recebido'&&p.dataRecebimento&&p.dataRecebimento.startsWith(mesKey))totalRecebidoMes+=p.valor;});
+  });
+  document.getElementById('rb-aguardando').textContent=fmtMoney(totalAguardando);
+  document.getElementById('rb-recebido').textContent=fmtMoney(totalRecebidoMes);
+
+  const vencendo=getParcelasVencendo(7);
+  const alertEl=document.getElementById('receb-alert');
+  if(vencendo.length){
+    alertEl.innerHTML=`<div class="alert-card"><div class="card-title">⏰ Vencendo em até 7 dias (${vencendo.length})</div>${vencendo.map(p=>`<div class="parcela-row"><span>${p.cliente} · Parcela ${p.numero}/${p.recebId?all.find(r=>r.id===p.recebId)?.parcelas.length:''}</span><span style="color:${p.atrasada?'var(--red)':'var(--yellow)'};font-weight:600">${fmtMoney(p.valor)} · ${p.atrasada?'Atrasada':fmtDate(p.vencimento)}</span></div>`).join('')}</div>`;
+  } else { alertEl.innerHTML=''; }
+
+  let filtered=all.filter(r=>activeRecebTab==='todos'||recebStatus(r)===activeRecebTab);
+  const list=document.getElementById('receb-list');
+  if(!filtered.length){list.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nenhum recebimento aqui ainda</p></div>';return;}
+  list.innerHTML=filtered.map(r=>{
+    const st=recebStatus(r);const stBadge=st==='recebido'?'b-recebido':st==='parcial'?'b-parcial':'b-aguardando';
+    const parcelasHtml=r.parcelas.map(p=>{
+      const dias=diasAteVencimento(p.vencimento);const venc=p.status!=='recebido'&&dias<=7;
+      return`<div class="parcela-row${venc?' li-venc':''}"><span>Parcela ${p.numero}/${r.parcelas.length} · ${fmtDate(p.vencimento)}${venc?(dias<0?' ⚠️ atrasada':' ⏰'):''}</span><span style="display:flex;align-items:center;gap:8px"><strong>${fmtMoney(p.valor)}</strong><span class="badge ${p.status==='recebido'?'b-recebido':'b-aguardando'}">${p.status==='recebido'?'Recebido':'Aguardando'}</span><button class="icon-btn" onclick="toggleParcelaStatus('${r.id}',${p.numero})">${p.status==='recebido'?'↩️':'✅'}</button><button class="icon-btn" onclick="editParcela('${r.id}',${p.numero})">✏️</button></span></div>`;
+    }).join('');
+    return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><strong style="font-size:15px">${r.cliente}</strong><span class="badge ${stBadge}" style="margin-left:6px">${recebStatusLabel(st)}</span><div class="li-sub" style="margin-top:2px">${r.descricao||'—'}</div></div><div style="display:flex;gap:4px"><button class="icon-btn" onclick="editReceb('${r.id}')">✏️</button><button class="icon-btn" onclick="deleteReceb('${r.id}')">🗑</button></div></div><div style="font-size:13px;color:var(--muted);margin-bottom:6px">Total: <strong style="color:var(--text)">${fmtMoney(r.valorTotal)}</strong> · Recebido: <strong style="color:var(--green)">${fmtMoney(recebValorRecebido(r))}</strong> · Falta: <strong style="color:var(--yellow)">${fmtMoney(recebValorAguardando(r))}</strong></div>${parcelasHtml}</div>`;
+  }).join('');
+}
+
 // ===== RENDER HOME =====
 function renderHome(){
   const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
@@ -686,9 +873,13 @@ function renderHome(){
   fixasMes.forEach(f=>{if(f.pago)tPago+=f.valor;});
   const tPend=extrasMes.filter(e=>!e.pago).reduce((a,e)=>a+e.valor,0)+fixasMes.filter(f=>!f.pago).reduce((a,f)=>a+f.valor,0);
 
-  const saldo=tValor-tPago;
+  // Bonificações/recebimentos recebidos neste mês (resumo financeiro completo)
+  let tBonif=0;
+  getRecebs().forEach(r=>r.parcelas.forEach(p=>{if(p.status==='recebido'&&p.dataRecebimento&&p.dataRecebimento.startsWith(key))tBonif+=p.valor;}));
+
+  const saldo=tValor+tBonif-tPago;
   const sv=document.getElementById('saldo-val');sv.textContent=fmtMoney(saldo);sv.className='saldo-val'+(saldo<0?' neg':'');
-  document.getElementById('saldo-detail').textContent=`Receber: ${fmtMoney(tValor)} · Pago: ${fmtMoney(tPago)}${tPend>0?' · Pendente: '+fmtMoney(tPend):''}`;
+  document.getElementById('saldo-detail').textContent=`Horas: ${fmtMoney(tValor)}${tBonif>0?' · Bonificações: '+fmtMoney(tBonif):''} · Despesas: ${fmtMoney(tPago)}${tPend>0?' · Pendente: '+fmtMoney(tPend):''}`;
   document.getElementById('h-total').textContent=minToH(tMin);document.getElementById('h-extra').textContent=minToH(tExtra);
   document.getElementById('h-valor').textContent=fmtMoney(tValor);document.getElementById('h-desp').textContent=fmtMoney(tPago);
   renderChart(horasMes,cfg,lim);
@@ -704,259 +895,4 @@ function renderHome(){
     return`<div class="list-item"><div class="li-icon" style="background:#1a1a3a">${tipoIcon(t)}</div><div class="li-body"><div class="li-title">${fmtDate(r.data)} <span class="badge ${tipoBadge(t)}">${t}</span>${inc?'<span class="badge b-pend" style="margin-left:4px">Em aberto</span>':''}</div><div class="li-sub">${DIAS[d.getDay()]} · ${r.e1||'—'}${r.s1?'–'+r.s1:''}${r.e2?' / '+r.e2+(r.s2?'–'+r.s2:''):''}${r.e3?' / '+r.e3+(r.s3?'–'+r.s3:''):''} · ${minToH(m)}</div></div><div class="li-right"><div class="li-val" style="color:var(--green)">${cfg.normal?fmtMoney(v):minToH(m)}</div><div class="li-actions"><button class="icon-btn" onclick="editHora('${r.id}')">✏️</button><button class="icon-btn" onclick="delHora('${r.id}')">🗑</button></div></div></div>`;
   }).join('');
 
-  if(fixasMes.length||extrasMes.length){
-    html+=`<div style="font-size:12px;color:var(--muted);padding:10px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.8px">Despesas</div>`;
-    html+=fixasMes.map(f=>`<div class="list-item${f.pago?' desp-pago':''}"><div class="li-icon" style="background:#1a2a3a">${CAT_EMOJI[f.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${f.nome} <span class="badge b-fixa">Fixa</span></div><div class="li-sub">${f.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${f.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(f.valor)}</div><div class="li-actions"><button class="icon-btn" onclick="toggleFixaPago('${f.id}','${key}')">${f.pago?'↩️':'✅'}</button></div></div></div>`).join('');
-    html+=extrasMes.map(e=>`<div class="list-item${e.pago?' desp-pago':''}"><div class="li-icon" style="background:#3a1a1a">${CAT_EMOJI[e.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${e.descricao}${e.parcela?' <span class="badge b-extra">'+e.parcela+'</span>':''}</div><div class="li-sub">${e.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${e.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(e.valor)}</div><div class="li-actions"><button class="icon-btn" onclick="toggleExtraPago('${e.id}')">${e.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editDesp('${e.id}')">✏️</button><button class="icon-btn" onclick="delDesp('${e.id}')">🗑</button></div></div></div>`).join('');
-  }
-  list.innerHTML=html;
-}
-
-function renderChart(horasMes,cfg,lim){
-  const semanas={};
-  horasMes.forEach(r=>{const d=new Date(r.data+'T12:00:00');const wk=getWeekNum(d);if(!semanas[wk])semanas[wk]=0;semanas[wk]+=calcHoras(r);});
-  const keys=Object.keys(semanas).sort();
-  if(!keys.length){document.getElementById('chart-bars').innerHTML='<div style="width:100%;text-align:center;color:var(--muted);font-size:13px;padding:30px 0">Sem dados</div>';document.getElementById('chart-labels').innerHTML='';return;}
-  const maxMin=Math.max(...keys.map(k=>semanas[k]),1);
-  document.getElementById('chart-bars').innerHTML=keys.map(k=>{
-    const pct=(semanas[k]/maxMin)*100;const color=semanas[k]>(lim*5)?'var(--yellow)':'var(--accent)';
-    return`<div class="bar-col"><div class="bar" style="height:${pct}%;background:${color};width:100%;position:relative"><span class="bar-val">${minToH(semanas[k])}</span></div></div>`;
-  }).join('');
-  document.getElementById('chart-labels').innerHTML=keys.map(k=>`<span style="font-size:10px;color:var(--muted);flex:1;text-align:center">Sem ${k}</span>`).join('');
-}
-
-// ===== RESUMO ANUAL =====
-function changeResumoYear(d){resumoYear+=d;renderResumo();}
-function getTotaisMes(mes,ano){
-  const cfg=getCfg();const lim=(cfg.horas||8)*60;
-  const key=monthKey(ano,mes-1);
-  const horasMes=getHoras().filter(r=>r.data.startsWith(key));
-  let valor=0,totalMin=0;
-  horasMes.forEach(r=>{const m=calcHoras(r);const t=getTipo(r.data);totalMin+=m;valor+=calcValor(m,t,cfg);});
-  const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
-  const fixasMes=getFixasDoMes(key);
-  let despPago=0,despPend=0;
-  extrasMes.forEach(e=>{if(e.pago)despPago+=e.valor;else despPend+=e.valor;});
-  fixasMes.forEach(f=>{if(f.pago)despPago+=f.valor;else despPend+=f.valor;});
-  const temDados=horasMes.length>0||extrasMes.length>0||fixasMes.length>0;
-  return {valor,totalMin,despPago,despPend,despTotal:despPago+despPend,saldo:valor-despPago,temDados};
-}
-function goToMes(mes,ano){
-  currentMonth=mes-1;currentYear=ano;
-  goPage('home',document.getElementById('snav-home')||document.querySelector('.nav-btn'));
-}
-function renderResumo(){
-  document.getElementById('resumo-year-label').textContent=resumoYear;
-  const meses=MESES.map((nome,i)=>({nome,i,t:getTotaisMes(i+1,resumoYear)}));
-  const maxVal=Math.max(...meses.map(m=>Math.max(m.t.valor,m.t.despPago)),1);
-
-  document.getElementById('resumo-chart-bars').innerHTML=meses.map(m=>{
-    const pctRec=(m.t.valor/maxVal)*100,pctDesp=(m.t.despPago/maxVal)*100;
-    return`<div class="bar-col" style="flex-direction:row;gap:2px;align-items:flex-end;height:100%">
-      <div class="bar" style="height:${pctRec}%;background:var(--green);width:45%;position:relative;min-height:${m.t.valor>0?'2px':'0'}"></div>
-      <div class="bar" style="height:${pctDesp}%;background:var(--red);width:45%;position:relative;min-height:${m.t.despPago>0?'2px':'0'}"></div>
-    </div>`;
-  }).join('');
-  document.getElementById('resumo-chart-labels').innerHTML=meses.map(m=>`<span style="font-size:9px;color:var(--muted);flex:1;text-align:center">${m.nome.substring(0,3)}</span>`).join('');
-
-  document.getElementById('resumo-list').innerHTML=meses.map(({nome,i,t})=>{
-    const mes=i+1;
-    const pct=t.despTotal>0?Math.min(100,Math.round((t.valor/t.despTotal)*100)):(t.valor>0?100:0);
-    const corBarra=pct>=100?'var(--green)':pct>=80?'var(--yellow)':'var(--red)';
-    return`<div class="card" style="margin-bottom:8px;opacity:${t.temDados?1:.6};cursor:pointer" onclick="goToMes(${mes},${resumoYear})">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <strong style="font-size:15px">${nome}</strong>
-        <span style="font-size:12px;color:var(--muted)">${minToH(t.totalMin)}</span>
-      </div>
-      <div style="display:flex;gap:16px;font-size:13px;margin-bottom:8px">
-        <span>💵 <strong style="color:var(--green)">${fmtMoney(t.valor)}</strong></span>
-        <span>💸 <strong style="color:var(--red)">${fmtMoney(t.despPago)}</strong>${t.despPend>0?' <span style="color:var(--yellow);font-size:11px">(+'+fmtMoney(t.despPend)+' pend.)</span>':''}</span>
-      </div>
-      <div style="background:var(--surface);border-radius:6px;height:6px;overflow:hidden;margin-bottom:6px">
-        <div style="width:${pct}%;height:100%;background:${corBarra}"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-        <span>Cobertura: ${pct}%</span>
-        <span>Saldo: <strong style="color:${t.saldo>=0?'var(--green)':'var(--red)'}">${fmtMoney(t.saldo)}</strong></span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ===== RENDER HIST =====
-function renderHist(){
-  const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
-  const cfg=getCfg();const lim=(cfg.horas||8)*60;
-  const cont=document.getElementById('hist-content');
-  if(activeHistTab==='horas'){
-    const horasMes=getHoras().filter(r=>r.data.startsWith(key));
-    if(!horasMes.length){cont.innerHTML='<div class="empty"><div class="empty-icon">⏱</div><p>Nenhuma hora registrada</p></div>';return;}
-    cont.innerHTML=horasMes.map(r=>{
-      const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);
-      const norm=tipo==='Normal'?Math.min(m,lim):m;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
-      const d=new Date(r.data+'T12:00:00');const inc=r.e1&&!r.s1;
-      const tb=tipo==='Normal'?'b-normal':tipo==='Sábado'?'b-sab':tipo==='Domingo'?'b-dom':'b-fer';
-      return`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><strong>${fmtDate(r.data)}</strong> <span style="color:var(--muted);font-size:13px">${DIAS_FULL[d.getDay()]}</span><br><span class="badge ${tb}" style="margin-top:4px">${tipo}</span>${inc?'<span class="badge b-pend" style="margin-left:4px">Em aberto ⚠️</span>':''}</div><div style="display:flex;gap:4px"><button class="icon-btn" onclick="editHora('${r.id}')">✏️</button><button class="icon-btn" onclick="delHora('${r.id}');renderHist()">🗑</button></div></div><div style="font-size:13px;color:var(--muted);margin-bottom:8px">${r.e1||'—'}${r.s1?' → '+r.s1:' → Em aberto'}${r.e2?' | '+r.e2+(r.s2?' → '+r.s2:''):''}${r.e3?' | '+r.e3+(r.s3?' → '+r.s3:''):''}</div><div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px"><span>⏱ <strong>${minToH(m)}</strong></span>${norm&&tipo==='Normal'?`<span style="color:var(--green)">✅ ${minToH(norm)}</span>`:''} ${extra?`<span style="color:var(--yellow)">⚡ Extra: ${minToH(extra)}</span>`:''} ${tipo!=='Normal'&&m?`<span style="color:var(--blue)">🌟 Especial: ${minToH(m)}</span>`:''}</div>${cfg.normal&&m?`<div style="margin-top:10px;text-align:right;font-size:16px;font-weight:700;color:var(--green)">${fmtMoney(v)}</div>`:''} ${r.obs?`<div style="margin-top:8px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">📝 ${r.obs}</div>`:''}</div>`;
-    }).join('');
-  } else {
-    const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
-    const fixasMes=getFixasDoMes(key);
-    if(!extrasMes.length&&!fixasMes.length){cont.innerHTML='<div class="empty"><div class="empty-icon">💸</div><p>Nenhuma despesa neste mês</p></div>';return;}
-    let tPago=0,tPend=0;
-    let html=fixasMes.map(f=>{
-      if(f.pago)tPago+=f.valor;else tPend+=f.valor;
-      return`<div class="list-item${f.pago?' desp-pago':''}"><div class="li-icon" style="background:#1a2a3a;font-size:20px">${CAT_EMOJI[f.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${f.nome} <span class="badge b-fixa">Fixa</span></div><div class="li-sub">${f.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${f.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(f.valor)}</div><span class="badge ${f.pago?'b-pago':'b-pend'}">${f.pago?'Pago':'Pendente'}</span><div class="li-actions" style="margin-top:4px"><button class="icon-btn" onclick="toggleFixaPago('${f.id}','${key}');renderHist()">${f.pago?'↩️':'✅'}</button></div></div></div>`;
-    }).join('');
-    html+=extrasMes.map(e=>{
-      if(e.pago)tPago+=e.valor;else tPend+=e.valor;
-      return`<div class="list-item${e.pago?' desp-pago':''}"><div class="li-icon" style="background:#3a1a1a;font-size:20px">${CAT_EMOJI[e.categoria]||'📦'}</div><div class="li-body"><div class="li-title">${e.descricao}${e.parcela?' <span class="badge b-extra">'+e.parcela+'</span>':''}</div><div class="li-sub">${e.categoria}</div></div><div class="li-right"><div class="li-val" style="color:${e.pago?'var(--muted)':'var(--red)'}">-${fmtMoney(e.valor)}</div><span class="badge ${e.pago?'b-pago':'b-pend'}">${e.pago?'Pago':'Pendente'}</span><div class="li-actions" style="margin-top:4px"><button class="icon-btn" onclick="toggleExtraPago('${e.id}');renderHist()">${e.pago?'↩️':'✅'}</button><button class="icon-btn" onclick="editDesp('${e.id}')">✏️</button><button class="icon-btn" onclick="delDesp('${e.id}');renderHist()">🗑</button></div></div></div>`;
-    }).join('');
-    cont.innerHTML=`<div class="card">${html}</div><div class="card"><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px"><span style="color:var(--muted)">Total pago</span><span style="color:var(--red);font-weight:600">-${fmtMoney(tPago)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px"><span style="color:var(--muted)">Pendente</span><span style="color:var(--yellow);font-weight:600">-${fmtMoney(tPend)}</span></div><div style="display:flex;justify-content:space-between;padding:10px 0 4px;font-size:15px;font-weight:700;border-top:1px solid var(--border);margin-top:6px"><span>Total geral</span><span>-${fmtMoney(tPago+tPend)}</span></div></div>`;
-  }
-}
-
-// ===== EXPORT: HORAS (separado) =====
-function exportHorasExcel(){
-  const key=monthKey(currentYear,currentMonth);
-  const horasMes=getHoras().filter(r=>r.data.startsWith(key));
-  if(!horasMes.length){toast('⚠️ Nenhuma hora neste mês');return;}
-  const cfg=getCfg();const lim=(cfg.horas||8)*60;const nome=getNome();
-  const rows=[[nome?'Funcionário: '+nome:'HorasCertas'],[],['Data','Dia','Tipo','E1','S1','E2','S2','E3','S3','Total','Normal','Extra','Valor (R$)','Obs']];
-  let tMin=0,tNorm=0,tExtra=0,tValor=0;
-  horasMes.forEach(r=>{
-    const m=calcHoras(r);const tipo=getTipo(r.data);const v=calcValor(m,tipo,cfg);const d=new Date(r.data+'T12:00:00');
-    const norm=tipo==='Normal'?Math.min(m,lim):m;const extra=tipo==='Normal'?Math.max(m-lim,0):0;
-    tMin+=m;tNorm+=norm;tExtra+=extra;tValor+=v;
-    rows.push([fmtDate(r.data),DIAS_FULL[d.getDay()],tipo,r.e1||'',r.s1||'Em aberto',r.e2||'',r.s2||'',r.e3||'',r.s3||'',minToH(m),minToH(norm),minToH(extra),v?v.toFixed(2):'',r.obs||'']);
-  });
-  rows.push([]);rows.push(['TOTAIS','','','','','','','','',minToH(tMin),minToH(tNorm),minToH(tExtra),tValor.toFixed(2),'']);
-  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:12},{wch:9},{wch:8},{wch:11},{wch:8},{wch:8},{wch:8},{wch:8},{wch:9},{wch:9},{wch:9},{wch:11},{wch:20}];
-  XLSX.utils.book_append_sheet(wb,ws,'Horas');
-  XLSX.writeFile(wb,`Horas_${MESES[currentMonth]}_${currentYear}${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
-  toast('⏱ Excel de horas exportado!');
-}
-
-// ===== EXPORT: DESPESAS (separado) =====
-function exportDespesasExcel(){
-  const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
-  const extrasMes=getExtras().filter(e=>e.mes===mes&&e.ano===ano);
-  const fixasMes=getFixasDoMes(key);
-  if(!extrasMes.length&&!fixasMes.length){toast('⚠️ Nenhuma despesa neste mês');return;}
-  const nome=getNome();
-  const rows=[[nome?'Funcionário: '+nome:'HorasCertas'],[],['Tipo','Descrição','Categoria','Parcela','Valor (R$)','Status']];
-  let tPago=0,tPend=0;
-  fixasMes.forEach(f=>{if(f.pago)tPago+=f.valor;else tPend+=f.valor;rows.push(['Fixa',f.nome,f.categoria,'',f.valor.toFixed(2),f.pago?'Pago':'Pendente']);});
-  extrasMes.forEach(e=>{if(e.pago)tPago+=e.valor;else tPend+=e.valor;rows.push(['Avulsa',e.descricao,e.categoria,e.parcela||'',e.valor.toFixed(2),e.pago?'Pago':'Pendente']);});
-  rows.push([]);rows.push(['TOTAL PAGO','','','',tPago.toFixed(2),'']);rows.push(['TOTAL PENDENTE','','','',tPend.toFixed(2),'']);
-  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:10},{wch:26},{wch:16},{wch:10},{wch:12},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,ws,'Despesas');
-  XLSX.writeFile(wb,`Despesas_${MESES[currentMonth]}_${currentYear}${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
-  toast('💸 Excel de despesas exportado!');
-}
-
-// ===== EXPORT: TUDO (backup completo) =====
-function exportAllExcel(){
-  const wb=XLSX.utils.book_new();const nome=getNome();
-  const horas=getHoras();
-  if(horas.length){
-    const rows=[['Data','E1','S1','E2','S2','E3','S3','Obs']];
-    horas.forEach(r=>rows.push([r.data,r.e1||'',r.s1||'',r.e2||'',r.s2||'',r.e3||'',r.s3||'',r.obs||'']));
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Horas (tudo)');
-  }
-  const extras=getExtras();
-  if(extras.length){
-    const rows=[['Mês','Ano','Descrição','Categoria','Parcela','Valor','Pago']];
-    extras.forEach(e=>rows.push([e.mes,e.ano,e.descricao,e.categoria,e.parcela||'',e.valor,e.pago?'Sim':'Não']));
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Despesas Avulsas');
-  }
-  const fixas=getFixas();
-  if(fixas.length){
-    const rows=[['Nome','Valor mensal','Categoria','Encerra em']];
-    fixas.forEach(f=>rows.push([f.nome,f.valor,f.categoria,f.fim||'']));
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Despesas Fixas');
-  }
-  const fer=getFeriados();
-  if(fer.length){
-    const rows=[['Data','Descrição']];
-    fer.forEach(f=>rows.push([f.data,f.desc]));
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Feriados');
-  }
-  if(!wb.SheetNames.length){toast('⚠️ Nenhum dado salvo');return;}
-  XLSX.writeFile(wb,`HorasCertas_Backup${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
-  toast('📦 Backup exportado!');
-}
-
-function clearData(){
-  if(!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.'))return;
-  ['hc_reg','hc_ext','hc_fixas','hc_fixas_over','hc_fer','hc_cfg'].forEach(k=>localStorage.removeItem(k));
-  toast('🗑 Dados apagados');renderHome();renderFixasConfig();renderFeriadosConfig();
-}
-function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
-
-// ===== MIGRAÇÃO: recupera dados de versões antigas do app (chave 'horasDB') =====
-const OLD_CAT_MAP={
-  '🚌 Transporte':'Transporte','🍽 Alimentação':'Alimentação','📱 Comunicação':'Serviços',
-  '🛠 Material':'Outros','👔 Uniforme':'Outros','🏠 Casa / Moradia':'Moradia','💊 Saúde':'Saúde',
-  '🎓 Educação':'Outros','🎉 Lazer':'Lazer','👗 Vestuário':'Outros','👶 Filhos':'Outros',
-  '🐾 Pet':'Outros','🍔 Mercado':'Alimentação','💰 Poupança':'Investimento','📈 Investimento':'Investimento',
-  '💳 Dívida / Parcela':'Cartão','📦 Outros':'Outros'
-};
-function migrateOldData(){
-  if(localStorage.getItem('hc_migrated_v3'))return;
-  try{
-    const oldDB=S_get('horasDB',null);
-    if(oldDB){
-      let horas=getHoras();let extras=getExtras();
-      const existingHorasIds=new Set(horas.map(h=>h.id));
-      const existingExtrasIds=new Set(extras.map(e=>e.id));
-      let importedH=0,importedD=0;
-      Object.keys(oldDB).forEach(key=>{
-        const mesData=oldDB[key];
-        (mesData.horas||[]).forEach(r=>{
-          if(!existingHorasIds.has(r.id)){
-            horas.push({id:r.id,data:r.data,e1:r.e1||'',s1:r.s1||'',e2:r.e2||'',s2:r.s2||'',e3:'',s3:'',obs:r.obs||''});
-            importedH++;
-          }
-        });
-        (mesData.despesas||[]).forEach(d=>{
-          if(!existingExtrasIds.has(d.id)){
-            const[y,m]=key.split('-');
-            const categoria=OLD_CAT_MAP[d.cat]||'Outros';
-            extras.push({id:d.id,mes:parseInt(m),ano:parseInt(y),descricao:d.desc||d.cat||'Despesa',valor:d.valor,categoria,parcela:'',pago:!!d.pago});
-            importedD++;
-          }
-        });
-      });
-      if(importedH>0||importedD>0){
-        horas.sort((a,b)=>a.data.localeCompare(b.data));
-        saveHorasArr(horas);saveExtrasArr(extras);
-        setTimeout(()=>toast(`✅ ${importedH} hora(s) e ${importedD} despesa(s) recuperadas!`,4000),500);
-      }
-    }
-    const oldCfg=S_get('horasCfg',null);
-    if(oldCfg&&!localStorage.getItem('hc_cfg')){
-      S_set('hc_cfg',{normal:oldCfg.normal||0,extra:oldCfg.extra||50,sab:oldCfg.sab||100,dom:oldCfg.dom||100,fer:oldCfg.fer||100,horas:oldCfg.horas||8});
-    }
-  }catch(err){console.log('Migração falhou:',err);}
-  localStorage.setItem('hc_migrated_v3','true');
-}
-
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{
-  migrateOldData();
-  setupResponsive();
-  window.addEventListener('resize',()=>{setupResponsive();renderHome();});
-  const now=new Date();
-  document.getElementById('h-data').value=now.toISOString().split('T')[0];
-  fillMesAnoSelects(document.getElementById('d-mes'),document.getElementById('d-ano'),now.getMonth()+1,now.getFullYear());
-  fillCatSelect(document.getElementById('d-cat'));
-  fillCatSelect(document.getElementById('fixa-cat'));
-  document.getElementById('nome-input').value=getNome();
-  loadCfg();updateNomeUI();renderHome();renderFixasConfig();renderFeriadosConfig();
-  document.getElementById('snav-home')?.classList.add('active');
-});
-</script>
-</body>
-</html>
+  if(fixasMes.length||extra
