@@ -242,22 +242,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- RECEBIMENTOS -->
 <div class="page" id="page-receb">
   <div class="page-title">Recebimentos</div>
-  <div id="receb-alert"></div>
-  <div class="chips">
-    <div class="chip yellow"><div class="val" id="rb-aguardando">R$0</div><div class="lbl">Aguardando</div></div>
-    <div class="chip green"><div class="val" id="rb-recebido">R$0</div><div class="lbl">Recebido (mês)</div></div>
-  </div>
   <div class="tabs">
-    <button class="tab active" onclick="switchRecebTab('todos')">Todos</button>
-    <button class="tab" onclick="switchRecebTab('aguardando')">Aguardando</button>
-    <button class="tab" onclick="switchRecebTab('parcial')">Parcial</button>
-    <button class="tab" onclick="switchRecebTab('recebido')">Recebido</button>
+    <button class="tab active" id="rmain-tab-clientes" onclick="switchRecebMainTab('clientes')">Clientes</button>
+    <button class="tab" id="rmain-tab-bonif" onclick="switchRecebMainTab('bonif')">Bonificação</button>
+    <button class="tab" id="rmain-tab-vendas" onclick="switchRecebMainTab('vendas')">Vendas (5%)</button>
   </div>
-  <button class="btn btn-primary" style="margin-bottom:12px" onclick="openModalReceb()">+ Novo recebimento / bonificação</button>
-  <div class="export-card">
-    <button class="btn btn-primary btn-sm" style="width:100%" onclick="exportRecebimentosExcel()">📄 Exportar recebimentos .xlsx</button>
+
+  <div id="receb-sub-clientes">
+    <div id="receb-alert"></div>
+    <div class="chips">
+      <div class="chip yellow"><div class="val" id="rb-aguardando">R$0</div><div class="lbl">Aguardando</div></div>
+      <div class="chip green"><div class="val" id="rb-recebido">R$0</div><div class="lbl">Recebido (mês)</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchRecebTab('todos')">Todos</button>
+      <button class="tab" onclick="switchRecebTab('aguardando')">Aguardando</button>
+      <button class="tab" onclick="switchRecebTab('parcial')">Parcial</button>
+      <button class="tab" onclick="switchRecebTab('recebido')">Recebido</button>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="openModalReceb()">+ Novo recebimento de cliente</button>
+    <div class="export-card">
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="exportRecebimentosExcel()">📄 Exportar recebimentos .xlsx</button>
+    </div>
+    <div id="receb-list"></div>
   </div>
-  <div id="receb-list"></div>
+
+  <div id="receb-sub-bonif" style="display:none">
+    <div class="field-hint" style="margin-bottom:10px">Bonificações de pedidos: só valor recebido e data. Não entra no saldo do mês na Home.</div>
+    <div class="chips">
+      <div class="chip green"><div class="val" id="bn-total">R$0</div><div class="lbl">Total recebido</div></div>
+      <div class="chip blue"><div class="val" id="bn-mes">R$0</div><div class="lbl">Neste mês</div></div>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="openModalBonif()">+ Nova bonificação</button>
+    <div class="export-card">
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="exportBonifExcel()">📄 Exportar bonificações .xlsx</button>
+    </div>
+    <div id="bonif-list"></div>
+  </div>
+
+  <div id="receb-sub-vendas" style="display:none">
+    <div class="field-hint" style="margin-bottom:10px">Registre suas vendas (data, valor, descrição) e veja automaticamente 5% de comissão sobre cada uma. Não entra no saldo do mês na Home.</div>
+    <div class="chips">
+      <div class="chip blue"><div class="val" id="vd-total-vendido">R$0</div><div class="lbl">Total vendido</div></div>
+      <div class="chip green"><div class="val" id="vd-total-comissao">R$0</div><div class="lbl">Total comissão (5%)</div></div>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:12px" onclick="openModalVenda()">+ Nova venda</button>
+    <div class="export-card">
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="exportVendasExcel()">📄 Exportar vendas .xlsx</button>
+    </div>
+    <div id="vendas-list"></div>
+  </div>
 </div>
 
 <!-- RESUMO -->
@@ -401,6 +435,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="field"><label>Vencimento</label><input type="date" id="parc-venc"></div>
     <div class="field"><label>Status</label><select id="parc-status"><option value="aguardando">Aguardando</option><option value="recebido">Recebido</option></select></div>
     <button class="btn btn-primary" onclick="updateParcela()">Salvar alterações</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-venda" onclick="closeModalBg(event,'modal-venda')">
+  <div class="modal"><div class="modal-title"><span id="venda-modal-title">Nova venda</span> <button class="close-btn" onclick="closeModal('modal-venda')">×</button></div>
+    <input type="hidden" id="venda-id">
+    <div class="field"><label>Data da venda</label><input type="date" id="venda-data"></div>
+    <div class="field"><label>Descrição</label><input type="text" id="venda-desc" placeholder="Ex: Venda produto X para cliente Y"></div>
+    <div class="field"><label>Valor total da venda (R$)</label><input type="number" id="venda-valor" min="0" step="0.01" oninput="updateComissaoPreview()"></div>
+    <div class="field-hint" style="margin-bottom:12px">💰 Comissão (5%): <strong id="venda-comissao-preview" style="color:var(--green)">R$0,00</strong></div>
+    <button class="btn btn-primary" onclick="saveVenda()">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bonif" onclick="closeModalBg(event,'modal-bonif')">
+  <div class="modal"><div class="modal-title"><span id="bonif-modal-title">Nova bonificação</span> <button class="close-btn" onclick="closeModal('modal-bonif')">×</button></div>
+    <input type="hidden" id="bonif-id">
+    <div class="field"><label>Valor recebido (R$)</label><input type="number" id="bonif-valor" min="0" step="0.01"></div>
+    <div class="field"><label>Data</label><input type="date" id="bonif-data"></div>
+    <div class="field"><label>Descrição / Pedido (opcional)</label><input type="text" id="bonif-desc" placeholder="Ex: Pedido #123"></div>
+    <button class="btn btn-primary" onclick="saveBonif()">Salvar</button>
   </div>
 </div>
 
@@ -636,7 +691,7 @@ function goPage(id,btn){
   if(btn){btn.classList.add('active');const map={home:'snav-home',add:'snav-add',hist:'snav-hist',receb:'snav-receb',resumo:'snav-resumo',cfg:'snav-cfg'};document.getElementById(map[id])?.classList.add('active');}
   if(id==='home')renderHome();
   if(id==='hist')renderHist();
-  if(id==='receb')renderRecebimentos();
+  if(id==='receb')refreshActiveRecebTab();
   if(id==='resumo')renderResumo();
   if(id==='cfg'){renderFixasConfig();renderFeriadosConfig();}
 }
@@ -857,6 +912,153 @@ function renderRecebimentos(){
   }).join('');
 }
 
+// ===== SUB-ABAS da página Recebimentos =====
+function refreshActiveRecebTab(){
+  if(document.getElementById('rmain-tab-bonif').classList.contains('active'))renderBonif();
+  else if(document.getElementById('rmain-tab-vendas').classList.contains('active'))renderVendas();
+  else renderRecebimentos();
+}
+function switchRecebMainTab(t){
+  ['clientes','bonif','vendas'].forEach(k=>{
+    document.getElementById('rmain-tab-'+k).classList.toggle('active',k===t);
+    document.getElementById('receb-sub-'+k).style.display=(k===t?'':'none');
+  });
+  if(t==='clientes')renderRecebimentos();
+  if(t==='bonif')renderBonif();
+  if(t==='vendas')renderVendas();
+}
+
+// ===== BONIFICAÇÃO (pedido): só valor + data, não soma no saldo do mês =====
+function getBonifs(){return S_get('hc_bonif',[]);}
+function saveBonifs(v){S_set('hc_bonif',v);}
+function openModalBonif(){
+  document.getElementById('bonif-id').value='';document.getElementById('bonif-valor').value='';
+  document.getElementById('bonif-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('bonif-desc').value='';
+  document.getElementById('bonif-modal-title').textContent='Nova bonificação';
+  openModal('modal-bonif');
+}
+function editBonif(id){
+  const b=getBonifs().find(x=>x.id===id);if(!b)return;
+  document.getElementById('bonif-id').value=b.id;document.getElementById('bonif-valor').value=b.valor;
+  document.getElementById('bonif-data').value=b.data;document.getElementById('bonif-desc').value=b.descricao||'';
+  document.getElementById('bonif-modal-title').textContent='Editar bonificação';
+  openModal('modal-bonif');
+}
+function saveBonif(){
+  const id=document.getElementById('bonif-id').value;
+  const valor=parseFloat(document.getElementById('bonif-valor').value);
+  const data=document.getElementById('bonif-data').value;
+  const descricao=document.getElementById('bonif-desc').value.trim();
+  if(!valor||!data){toast('⚠️ Preencha valor e data');return;}
+  let bonifs=getBonifs();
+  if(id){const idx=bonifs.findIndex(x=>x.id===id);if(idx!==-1)bonifs[idx]={...bonifs[idx],valor,data,descricao};toast('✅ Bonificação atualizada!');}
+  else{bonifs.push({id:uid(),valor,data,descricao});toast('✅ Bonificação salva!');}
+  saveBonifs(bonifs);closeModal('modal-bonif');renderBonif();
+}
+function deleteBonif(id){
+  if(!confirm('Remover esta bonificação?'))return;
+  saveBonifs(getBonifs().filter(x=>x.id!==id));renderBonif();toast('🗑 Removida');
+}
+function renderBonif(){
+  const bonifs=getBonifs().slice().sort((a,b)=>b.data.localeCompare(a.data));
+  const key=monthKey(currentYear,currentMonth);
+  const total=bonifs.reduce((a,b)=>a+b.valor,0);
+  const totalMes=bonifs.filter(b=>b.data.startsWith(key)).reduce((a,b)=>a+b.valor,0);
+  document.getElementById('bn-total').textContent=fmtMoney(total);
+  document.getElementById('bn-mes').textContent=fmtMoney(totalMes);
+  const list=document.getElementById('bonif-list');
+  if(!bonifs.length){list.innerHTML='<div class="empty"><div class="empty-icon">🎁</div><p>Nenhuma bonificação lançada ainda</p></div>';return;}
+  list.innerHTML=bonifs.map(b=>`<div class="list-item"><div class="li-icon" style="background:#1a3a1a">🎁</div><div class="li-body"><div class="li-title">${fmtMoney(b.valor)}</div><div class="li-sub">${fmtDate(b.data)}${b.descricao?' · '+b.descricao:''}</div></div><div class="li-right"><div class="li-actions"><button class="icon-btn" onclick="editBonif('${b.id}')">✏️</button><button class="icon-btn" onclick="deleteBonif('${b.id}')">🗑</button></div></div></div>`).join('');
+}
+function exportBonifExcel(){
+  const bonifs=getBonifs();
+  if(!bonifs.length){toast('⚠️ Nenhuma bonificação cadastrada');return;}
+  const nome=getNome();
+  const rows=[];
+  rows.push([xlsCell(nome?'Funcionário: '+nome:'HorasCertas',XLS_STYLE_TITLE)]);
+  rows.push([]);
+  rows.push(['Data','Valor (R$)','Descrição / Pedido'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+  let total=0;
+  bonifs.slice().sort((a,b)=>a.data.localeCompare(b.data)).forEach(b=>{total+=b.valor;rows.push([fmtDate(b.data),b.valor.toFixed(2),b.descricao||'']);});
+  rows.push([]);rows.push(['TOTAL','',total.toFixed(2),''].slice(0,3).map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
+  ws['!cols']=[{wch:14},{wch:12},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Bonificações');
+  XLSX.writeFile(wb,`Bonificacoes${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('📄 Excel de bonificações exportado!');
+}
+
+// ===== VENDAS: data + valor + descrição, 5% de comissão automática =====
+const COMISSAO_PCT=0.05;
+function getVendas(){return S_get('hc_vendas',[]);}
+function saveVendasArr(v){S_set('hc_vendas',v);}
+function updateComissaoPreview(){
+  const v=parseFloat(document.getElementById('venda-valor').value)||0;
+  document.getElementById('venda-comissao-preview').textContent=fmtMoney(v*COMISSAO_PCT);
+}
+function openModalVenda(){
+  document.getElementById('venda-id').value='';document.getElementById('venda-desc').value='';
+  document.getElementById('venda-valor').value='';document.getElementById('venda-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('venda-comissao-preview').textContent='R$0,00';
+  document.getElementById('venda-modal-title').textContent='Nova venda';
+  openModal('modal-venda');
+}
+function editVenda(id){
+  const v=getVendas().find(x=>x.id===id);if(!v)return;
+  document.getElementById('venda-id').value=v.id;document.getElementById('venda-data').value=v.data;
+  document.getElementById('venda-desc').value=v.descricao||'';document.getElementById('venda-valor').value=v.valor;
+  document.getElementById('venda-comissao-preview').textContent=fmtMoney(v.valor*COMISSAO_PCT);
+  document.getElementById('venda-modal-title').textContent='Editar venda';
+  openModal('modal-venda');
+}
+function saveVenda(){
+  const id=document.getElementById('venda-id').value;
+  const data=document.getElementById('venda-data').value;
+  const descricao=document.getElementById('venda-desc').value.trim();
+  const valor=parseFloat(document.getElementById('venda-valor').value);
+  if(!data||!valor){toast('⚠️ Preencha data e valor');return;}
+  let vendas=getVendas();
+  if(id){const idx=vendas.findIndex(x=>x.id===id);if(idx!==-1)vendas[idx]={...vendas[idx],data,descricao,valor};toast('✅ Venda atualizada!');}
+  else{vendas.push({id:uid(),data,descricao,valor});toast('✅ Venda registrada!');}
+  saveVendasArr(vendas);closeModal('modal-venda');renderVendas();
+}
+function deleteVenda(id){
+  if(!confirm('Remover esta venda?'))return;
+  saveVendasArr(getVendas().filter(x=>x.id!==id));renderVendas();toast('🗑 Removida');
+}
+function renderVendas(){
+  const vendas=getVendas().slice().sort((a,b)=>b.data.localeCompare(a.data));
+  const totalVendido=vendas.reduce((a,v)=>a+v.valor,0);
+  const totalComissao=totalVendido*COMISSAO_PCT;
+  document.getElementById('vd-total-vendido').textContent=fmtMoney(totalVendido);
+  document.getElementById('vd-total-comissao').textContent=fmtMoney(totalComissao);
+  const list=document.getElementById('vendas-list');
+  if(!vendas.length){list.innerHTML='<div class="empty"><div class="empty-icon">🛒</div><p>Nenhuma venda lançada ainda</p></div>';return;}
+  list.innerHTML=vendas.map(v=>`<div class="list-item"><div class="li-icon" style="background:#1a2a3a">🛒</div><div class="li-body"><div class="li-title">${v.descricao||'Venda'}</div><div class="li-sub">${fmtDate(v.data)} · Venda: ${fmtMoney(v.valor)}</div></div><div class="li-right"><div class="li-val" style="color:var(--green)">+${fmtMoney(v.valor*COMISSAO_PCT)}</div><div class="li-actions"><button class="icon-btn" onclick="editVenda('${v.id}')">✏️</button><button class="icon-btn" onclick="deleteVenda('${v.id}')">🗑</button></div></div></div>`).join('');
+}
+function exportVendasExcel(){
+  const vendas=getVendas();
+  if(!vendas.length){toast('⚠️ Nenhuma venda cadastrada');return;}
+  const nome=getNome();
+  const rows=[];
+  rows.push([xlsCell(nome?'Funcionário: '+nome:'HorasCertas',XLS_STYLE_TITLE)]);
+  rows.push([]);
+  rows.push(['Data','Descrição','Valor da Venda (R$)','Comissão 5% (R$)'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+  let totalVendido=0,totalComissao=0;
+  vendas.slice().sort((a,b)=>a.data.localeCompare(b.data)).forEach(v=>{
+    totalVendido+=v.valor;totalComissao+=v.valor*COMISSAO_PCT;
+    rows.push([fmtDate(v.data),v.descricao||'',v.valor.toFixed(2),(v.valor*COMISSAO_PCT).toFixed(2)]);
+  });
+  rows.push([]);
+  rows.push(['TOTAL','',totalVendido.toFixed(2),totalComissao.toFixed(2)].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+  const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
+  ws['!cols']=[{wch:14},{wch:30},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Vendas');
+  XLSX.writeFile(wb,`Vendas${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
+  toast('📄 Excel de vendas exportado!');
+}
+
 // ===== RENDER HOME =====
 function renderHome(){
   const key=monthKey(currentYear,currentMonth);const mes=currentMonth+1,ano=currentYear;
@@ -873,13 +1075,9 @@ function renderHome(){
   fixasMes.forEach(f=>{if(f.pago)tPago+=f.valor;});
   const tPend=extrasMes.filter(e=>!e.pago).reduce((a,e)=>a+e.valor,0)+fixasMes.filter(f=>!f.pago).reduce((a,f)=>a+f.valor,0);
 
-  // Bonificações/recebimentos recebidos neste mês (resumo financeiro completo)
-  let tBonif=0;
-  getRecebs().forEach(r=>r.parcelas.forEach(p=>{if(p.status==='recebido'&&p.dataRecebimento&&p.dataRecebimento.startsWith(key))tBonif+=p.valor;}));
-
-  const saldo=tValor+tBonif-tPago;
+  const saldo=tValor-tPago;
   const sv=document.getElementById('saldo-val');sv.textContent=fmtMoney(saldo);sv.className='saldo-val'+(saldo<0?' neg':'');
-  document.getElementById('saldo-detail').textContent=`Horas: ${fmtMoney(tValor)}${tBonif>0?' · Bonificações: '+fmtMoney(tBonif):''} · Despesas: ${fmtMoney(tPago)}${tPend>0?' · Pendente: '+fmtMoney(tPend):''}`;
+  document.getElementById('saldo-detail').textContent=`Receber: ${fmtMoney(tValor)} · Pago: ${fmtMoney(tPago)}${tPend>0?' · Pendente: '+fmtMoney(tPend):''}`;
   document.getElementById('h-total').textContent=minToH(tMin);document.getElementById('h-extra').textContent=minToH(tExtra);
   document.getElementById('h-valor').textContent=fmtMoney(tValor);document.getElementById('h-desp').textContent=fmtMoney(tPago);
   renderChart(horasMes,cfg,lim);
@@ -929,10 +1127,8 @@ function getTotaisMes(mes,ano){
   let despPago=0,despPend=0;
   extrasMes.forEach(e=>{if(e.pago)despPago+=e.valor;else despPend+=e.valor;});
   fixasMes.forEach(f=>{if(f.pago)despPago+=f.valor;else despPend+=f.valor;});
-  let bonif=0;
-  getRecebs().forEach(r=>r.parcelas.forEach(p=>{if(p.status==='recebido'&&p.dataRecebimento&&p.dataRecebimento.startsWith(key))bonif+=p.valor;}));
-  const temDados=horasMes.length>0||extrasMes.length>0||fixasMes.length>0||bonif>0;
-  return {valor,totalMin,despPago,despPend,despTotal:despPago+despPend,bonif,saldo:valor+bonif-despPago,temDados};
+  const temDados=horasMes.length>0||extrasMes.length>0||fixasMes.length>0;
+  return {valor,totalMin,despPago,despPend,despTotal:despPago+despPend,saldo:valor-despPago,temDados};
 }
 function goToMes(mes,ano){
   currentMonth=mes-1;currentYear=ano;
@@ -963,7 +1159,6 @@ function renderResumo(){
       </div>
       <div style="display:flex;gap:16px;font-size:13px;margin-bottom:8px">
         <span>💵 <strong style="color:var(--green)">${fmtMoney(t.valor)}</strong></span>
-        ${t.bonif>0?`<span>🎁 <strong style="color:var(--green)">${fmtMoney(t.bonif)}</strong></span>`:''}
         <span>💸 <strong style="color:var(--red)">${fmtMoney(t.despPago)}</strong>${t.despPend>0?' <span style="color:var(--yellow);font-size:11px">(+'+fmtMoney(t.despPend)+' pend.)</span>':''}</span>
       </div>
       <div style="background:var(--surface);border-radius:6px;height:6px;overflow:hidden;margin-bottom:6px">
@@ -1043,6 +1238,20 @@ function exportHorasExcel(){
   });
   rows.push([]);
   rows.push(['TOTAIS','','','','','','','','',minToH(tMin),minToH(tNorm),minToH(tExtra),tValor.toFixed(2),''].map(v=>xlsCell(v,XLS_STYLE_TITLE)));
+
+  const vendasMes=getVendas().filter(v=>v.data.startsWith(key));
+  if(vendasMes.length){
+    rows.push([]);rows.push([]);
+    rows.push([xlsCell('VENDAS DO MÊS',XLS_STYLE_TITLE)]);
+    rows.push(['Data','Valor (R$)','Descrição'].map(h=>xlsCell(h,XLS_STYLE_HEADER)));
+    let tVendas=0;
+    vendasMes.slice().sort((a,b)=>a.data.localeCompare(b.data)).forEach(v=>{
+      tVendas+=v.valor;
+      rows.push([fmtDate(v.data),v.valor.toFixed(2),v.descricao||'']);
+    });
+    rows.push(['TOTAL','',tVendas.toFixed(2),''].slice(0,3).map(val=>xlsCell(val,XLS_STYLE_TITLE)));
+  }
+
   const wb=XLSX.utils.book_new();const ws=xlsSheetFromRows(rows);
   ws['!cols']=[{wch:12},{wch:12},{wch:9},{wch:9},{wch:11},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:12},{wch:12},{wch:11},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws,'Horas');
@@ -1137,6 +1346,18 @@ function exportAllExcel(){
     recs.forEach(r=>r.parcelas.forEach(p=>rows.push([r.cliente,r.descricao||'',`${p.numero}/${r.parcelas.length}`,p.valor,p.vencimento,p.status==='recebido'?'Recebido':'Aguardando',p.dataRecebimento||''])));
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Recebimentos');
   }
+  const bonifs=getBonifs();
+  if(bonifs.length){
+    const rows=[['Data','Valor','Descrição / Pedido']];
+    bonifs.forEach(b=>rows.push([b.data,b.valor,b.descricao||'']));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Bonificações');
+  }
+  const vendas=getVendas();
+  if(vendas.length){
+    const rows=[['Data','Descrição','Valor Venda','Comissão 5%']];
+    vendas.forEach(v=>rows.push([v.data,v.descricao||'',v.valor,v.valor*COMISSAO_PCT]));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Vendas');
+  }
   if(!wb.SheetNames.length){toast('⚠️ Nenhum dado salvo');return;}
   XLSX.writeFile(wb,`HorasCertas_Backup${nome?'_'+nome.split(' ')[0]:''}.xlsx`);
   toast('📦 Backup exportado!');
@@ -1144,7 +1365,7 @@ function exportAllExcel(){
 
 function clearData(){
   if(!confirm('Apagar TODOS os dados? Esta ação não pode ser desfeita.'))return;
-  ['hc_reg','hc_ext','hc_fixas','hc_fixas_over','hc_fer','hc_cfg','hc_receb'].forEach(k=>localStorage.removeItem(k));
+  ['hc_reg','hc_ext','hc_fixas','hc_fixas_over','hc_fer','hc_cfg','hc_receb','hc_vendas','hc_bonif'].forEach(k=>localStorage.removeItem(k));
   toast('🗑 Dados apagados');renderHome();renderFixasConfig();renderFeriadosConfig();
 }
 function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
@@ -1251,18 +1472,24 @@ function migrateOldData(){
 }
 
 // ===== INIT =====
+function safeStep(nome,fn){
+  try{fn();}catch(e){console.error('[HorasCertas] Falha em "'+nome+'":',e);}
+}
 document.addEventListener('DOMContentLoaded',()=>{
-  migrateOldData();
-  setupResponsive();
-  window.addEventListener('resize',()=>{setupResponsive();renderHome();});
-  const now=new Date();
-  document.getElementById('h-data').value=now.toISOString().split('T')[0];
-  fillMesAnoSelects(document.getElementById('d-mes'),document.getElementById('d-ano'),now.getMonth()+1,now.getFullYear());
-  fillCatSelect(document.getElementById('d-cat'));
-  fillCatSelect(document.getElementById('fixa-cat'));
-  document.getElementById('nome-input').value=getNome();
-  loadCfg();updateNomeUI();renderHome();renderFixasConfig();renderFeriadosConfig();
-  document.getElementById('snav-home')?.classList.add('active');
+  safeStep('migrateOldData',()=>migrateOldData());
+  safeStep('setupResponsive',()=>setupResponsive());
+  safeStep('resize-listener',()=>window.addEventListener('resize',()=>{safeStep('resize-setupResponsive',()=>setupResponsive());safeStep('resize-renderHome',()=>renderHome());}));
+  safeStep('h-data-default',()=>{const now=new Date();document.getElementById('h-data').value=now.toISOString().split('T')[0];});
+  safeStep('fillMesAnoSelects',()=>{const now=new Date();fillMesAnoSelects(document.getElementById('d-mes'),document.getElementById('d-ano'),now.getMonth()+1,now.getFullYear());});
+  safeStep('fillCatSelect-desp',()=>fillCatSelect(document.getElementById('d-cat')));
+  safeStep('fillCatSelect-fixa',()=>fillCatSelect(document.getElementById('fixa-cat')));
+  safeStep('nome-input',()=>document.getElementById('nome-input').value=getNome());
+  safeStep('loadCfg',()=>loadCfg());
+  safeStep('updateNomeUI',()=>updateNomeUI());
+  safeStep('renderHome',()=>renderHome());
+  safeStep('renderFixasConfig',()=>renderFixasConfig());
+  safeStep('renderFeriadosConfig',()=>renderFeriadosConfig());
+  safeStep('nav-ativo',()=>document.getElementById('snav-home')?.classList.add('active'));
 });
 </script>
 </body>
